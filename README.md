@@ -1,21 +1,14 @@
-# Github actions for scoop buckets
+# Github Actions for Scoop buckets
 
-Set of automated actions, which will bucket maintainer ever need to save time managing issues/pull requets. Using `stable` tag instead of specific version is highly recommended.
-
-Use [`SHOVEL`](https://github.com/Ash258/Scoop-Core) environment variable for more advanced and optimized scoop implementation.
+Set of automated actions, which bucket maintainers can use to save time managing issues / pull requests.
 
 ## Available environment variables
 
 1. `GITHUB_TOKEN`
     - **REQUIRED**
     - Use `${{ secrets.GITHUB_TOKEN }}`
-1. `GITH_EMAIL`**
+1. `GITH_EMAIL`†
     - String
-    - If specified, [`SHOVEL`](https://github.com/Ash258/Scoop-Core) implementation will be used
-1. `SHOVEL`
-    - Anything. Use `1`
-    - If specified, [`SHOVEL`](https://github.com/Ash258/Scoop-Core) implementation will be used
-    - It will be required in future versions to support installation/uninstallation PR checks
 1. `SCOOP_BRANCH`
     - String
     - If specified, scoop config 'SCOOP_BRANCH' will be configured and scoop updated
@@ -26,7 +19,7 @@ Use [`SHOVEL`](https://github.com/Ash258/Scoop-Core) environment variable for mo
     - String
     - List of manifest names joined with `,` used as parameter for auto-pr utility.
 
-**: `GITH_EMAIL` environment variable is not required since [1.0.1](https://github.com/Ash258/Scoop-GithubActions/releases/tag/1.0.1), but it is recommended.
+†: `GITH_EMAIL` environment variable is not required since [1.0.1](https://github.com/Ash258/Scoop-GithubActions/releases/tag/1.0.1), but it is recommended.
 If email is not specified, commits will not be pushed using account bounded to the email. This will lead to not adding contributions. ([See as example commit from github action without user's email](https://github.com/phips28/gh-action-bump-version/commit/adda5b22b3c785eb69d328f91dadb49a4c34a82e))
 
 ## Available actions
@@ -41,8 +34,8 @@ If email is not specified, commits will not be pushed using account bounded to t
 
 ### Issues
 
-As soon as new issue **is created** or **label `verify` is added** into issue, action is executed.
-Based on issue title, specific sub-action is executed.
+As soon as a new issue **is created** or the **label `verify` is added** to an issue, the action is executed.
+Based on the issue title, a specific sub-action is executed.
 It could be one of these:
 
 - **Hash check fails**
@@ -78,7 +71,7 @@ It could be one of these:
 
 ### Pull Requests
 
-As soon as PR **is created** or **comment `/verify` posted** to it, validation tests are executed (see [wiki](https://github.com/Ash258/Scoop-GithubActions/wiki/Pull-Request-Checks) for detailed desciption):
+As soon as a PR **is created** or the **comment `/verify` is posted** to it, validation tests are executed (see [wiki](https://github.com/Ash258/Scoop-GithubActions/wiki/Pull-Request-Checks) for detailed desciption):
 
 - ❗❗ [Pull request created from forked repository cannot be verified due to security concern from GitHub side](https://github.com/Ash258/Scoop-GithubActions/issues/42) ❗❗
     - Manual `/verify` comment is needed (<https://github.com/Ash258/GithubActionsBucketForTesting/pull/176>)
@@ -111,7 +104,7 @@ jobs:
     steps:
     - uses: actions/checkout@main
     - name: Excavator
-      uses: Ash258/Scoop-GithubActions@stable-win
+      uses: ScoopInstaller/Scoop-GithubActions@main
       env:
         GITH_EMAIL: youremail@mail.com
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -129,7 +122,7 @@ jobs:
     steps:
     - uses: actions/checkout@main
     - name: Issue Handler
-      uses: Ash258/Scoop-GithubActions@stable-win
+      uses: ScoopInstaller/Scoop-GithubActions@main
       if: github.event.action == 'opened' || (github.event.action == 'labeled' && contains(github.event.issue.labels.*.name, 'verify'))
       env:
         GITH_EMAIL: youremail@mail.com # Not needed, but recommended
@@ -147,7 +140,7 @@ jobs:
     steps:
     - uses: actions/checkout@main
     - name: Pull Request Validator
-      uses: Ash258/Scoop-GithubActions@stable-win
+      uses: ScoopInstaller/Scoop-GithubActions@main
       if: startsWith(github.event.comment.body, '/verify')
       env:
         GITH_EMAIL: youremail@mail.com # Not needed, but recommended
@@ -165,7 +158,7 @@ jobs:
     steps:
     - uses: actions/checkout@main
     - name: Pull Request Validator
-      uses: Ash258/Scoop-GithubActions@stable-win
+      uses: ScoopInstaller/Scoop-GithubActions@main
       env:
         GITH_EMAIL: youremail@mail.com # Not needed, but recommended
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
