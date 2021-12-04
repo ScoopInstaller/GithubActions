@@ -7,8 +7,15 @@ function Initialize-Scheduled {
     #>
     Write-Log 'Scheduled initialized'
 
+    if ($env:GITHUB_BRANCH) {
+        $_BRANCH = $env:GITHUB_BRANCH
+    } else {
+        $_BRANCH = 'master'
+    }
+
     $params = @{
         'Dir'         = $MANIFESTS_LOCATION
+        'Upstream'    = "${REPOSITORY}:${_BRANCH}"
         'Push'        = $true
         'SkipUpdated' = [bool] $env:SKIP_UPDATED
     }
