@@ -10,6 +10,7 @@ function Invoke-Action {
         'pull_request' { Initialize-PR }
         'issue_comment' { Initialize-PR }
         'schedule' { Initialize-Scheduled }
+        'workflow_dispatch' { Initialize-Scheduled }
         'issues' { Initialize-Issue }
         default { Write-Log 'Not supported event type' }
     }

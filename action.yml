@@ -1,6 +1,6 @@
 name: Bucket Minion
 description: Set of actions to automate scoop bucket maintaining.
-author: Jakub <Ash258> Čábera
+author: ScoopInstaller Maintainers
 # TODO: Wait for proper powershell support
 runs:
     using: node12

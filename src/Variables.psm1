@@ -27,7 +27,7 @@ $BUCKET_ROOT = $env:GITHUB_WORKSPACE
 $BINARIES_FOLDER = Join-Path $env:SCOOP_HOME 'bin'
 $MANIFESTS_LOCATION = Join-Path $BUCKET_ROOT 'bucket'
 
-$DEFAULT_EMAIL = 'scoop-bucket-minion@users.noreply.github.com'
+$DEFAULT_EMAIL = '41898282+github-actions[bot]@users.noreply.github.com'
 
 Export-ModuleMember -Variable EVENT, EVENT_TYPE, EVENT_RAW, REPOSITORY, BUCKET_ROOT, BINARIES_FOLDER, MANIFESTS_LOCATION, `
     NON_ZERO, DEFAULT_EMAIL

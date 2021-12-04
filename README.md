@@ -7,7 +7,7 @@ Set of automated actions, which bucket maintainers can use to save time managing
 1. `GITHUB_TOKEN`
     - **REQUIRED**
     - Use `${{ secrets.GITHUB_TOKEN }}`
-1. `GITH_EMAIL`†
+1. `USER_EMAIL`†
     - String
 1. `SCOOP_BRANCH`
     - String
@@ -19,7 +19,7 @@ Set of automated actions, which bucket maintainers can use to save time managing
     - String
     - List of manifest names joined with `,` used as parameter for auto-pr utility.
 
-†: `GITH_EMAIL` environment variable is not required since [1.0.1](https://github.com/Ash258/Scoop-GithubActions/releases/tag/1.0.1), but it is recommended.
+†: `USER_EMAIL` environment variable is not required since [1.0.1](https://github.com/Ash258/Scoop-GithubActions/releases/tag/1.0.1), but it is recommended.
 If email is not specified, commits will not be pushed using account bounded to the email. This will lead to not adding contributions. ([See as example commit from github action without user's email](https://github.com/phips28/gh-action-bump-version/commit/adda5b22b3c785eb69d328f91dadb49a4c34a82e))
 
 ## Available actions
@@ -106,7 +106,7 @@ jobs:
     - name: Excavator
       uses: ScoopInstaller/Scoop-GithubActions@main
       env:
-        GITH_EMAIL: youremail@mail.com
+        USER_EMAIL: youremail@mail.com
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         SKIP_UPDATED: '1'
 
@@ -125,7 +125,7 @@ jobs:
       uses: ScoopInstaller/Scoop-GithubActions@main
       if: github.event.action == 'opened' || (github.event.action == 'labeled' && contains(github.event.issue.labels.*.name, 'verify'))
       env:
-        GITH_EMAIL: youremail@mail.com # Not needed, but recommended
+        USER_EMAIL: youremail@mail.com # Not needed, but recommended
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 #.github\workflows\issue_commented.yml
@@ -143,7 +143,7 @@ jobs:
       uses: ScoopInstaller/Scoop-GithubActions@main
       if: startsWith(github.event.comment.body, '/verify')
       env:
-        GITH_EMAIL: youremail@mail.com # Not needed, but recommended
+        USER_EMAIL: youremail@mail.com # Not needed, but recommended
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 #.github\workflows\pull_request.yml
@@ -160,6 +160,6 @@ jobs:
     - name: Pull Request Validator
       uses: ScoopInstaller/Scoop-GithubActions@main
       env:
-        GITH_EMAIL: youremail@mail.com # Not needed, but recommended
+        USER_EMAIL: youremail@mail.com # Not needed, but recommended
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```

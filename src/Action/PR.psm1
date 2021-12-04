@@ -305,7 +305,7 @@ function Initialize-PR {
         $REPOSITORY_forked = "$($head.repo.full_name):$($head.ref)"
         Write-Log 'Repo' $REPOSITORY_forked
 
-        $cloneLocation = '/github/forked_workspace'
+        $cloneLocation = "${env:TMP}\forked_repository"
         git clone --branch $head.ref $head.repo.clone_url $cloneLocation
         $script:BUCKET_ROOT = $cloneLocation
         $buck = Join-Path $BUCKET_ROOT 'bucket'
@@ -328,6 +328,8 @@ function Initialize-PR {
     # Do not run checks on removed files
     $files = Get-AllChangedFilesInPR $EVENT.number -Filter
     Write-Log 'PR Changed Files' $files
+    $files = $files | Where-Object -Property 'filename' -Like -Value 'bucket/*'
+    Write-Log 'Only Changed Manifests' $files
 
     # Stage 2 - Manifests validation
     $check, $invalid = Test-PRFile $files
