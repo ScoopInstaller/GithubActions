@@ -65,30 +65,17 @@ function Test-Hash {
             Add-Label -ID $IssueID -Label 'duplicate'
             Add-Comment -ID $IssueID -Message $message
         } else {
-            Add-Comment -ID $IssueID -Message $message
-
             Write-Log 'Push - Fix hash and push the commit'
 
-            # $branch = "$manifestNameAsInBucket-hash-fix-$(Get-Random -Maximum 258258258)"
+            Add-Comment -ID $IssueID -Message $message
 
-            Write-Log 'Branch' $masterBranch
-
-            git checkout $masterBranch
             # TODO: There is some problem
 
             Write-Log 'Git Status' @(git status --porcelain)
 
             git add $gci.FullName
-            git commit -m "$titleToBePosted - Closes #$IssueID"
-            git push origin $masterBranch
-
-            # Create new PR
-            # Invoke-GithubRequest -Query "repos/$REPOSITORY/pulls" -Method Post -Body @{
-                # 'title' = $titleToBePosted
-                # 'base'  = $masterBranch
-                # 'head'  = $branch
-                # 'body'  = "- Closes #$IssueID"
-            # }
+            git commit -m "$titleToBePosted (Closes #$IssueID)"
+            git push
         }
     }
 }
