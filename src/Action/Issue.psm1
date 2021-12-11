@@ -38,8 +38,7 @@ function Test-Hash {
     } else {
         Write-Log 'Verified hash failed'
 
-        $masterBranch = (Invoke-GithubRequest "repos/$REPOSITORY").Content | ConvertFrom-Json
-        $masterBranch = $masterBranch.default_branch
+        $masterBranch = ((Invoke-GithubRequest "repos/$REPOSITORY").Content | ConvertFrom-Json).default_branch
         $message = @('You are right. Thank you for reporting.')
         # TODO: Post labels at the end of function
         Add-Label -ID $IssueID -Label 'verified', 'hash-fix-needed'
@@ -63,20 +62,42 @@ function Test-Hash {
             # Update PR description
             Invoke-GithubRequest "repos/$REPOSITORY/pulls/$prID" -Method Patch -Body @{ 'body' = (@("- Closes #$IssueID", $pr.body) -join "`r`n") }
             Add-Label -ID $IssueID -Label 'duplicate'
-            Add-Comment -ID $IssueID -Message $message
         } else {
-            Write-Log 'Push - Fix hash and push the commit'
+            # Check if default branch is protected
+            if (((Invoke-GithubRequest "repos/$REPOSITORY/branches/$masterBranch").Content | ConvertFrom-Json).protected) {
+                Write-Log 'PR - Create new branch and post PR'
 
-            Add-Comment -ID $IssueID -Message $message
+                $branch = "$manifestNameAsInBucket-hash-fix-$(Get-Random -Maximum 258258258)"
 
-            # TODO: There is some problem
+                Write-Log 'Branch' $branch
 
-            Write-Log 'Git Status' @(git status --porcelain)
+                git checkout -B $branch
+                # TODO: There is some problem
 
-            git add $gci.FullName
-            git commit -m "$titleToBePosted (Closes #$IssueID)"
-            git push
+                Write-Log 'Git Status' @(git status --porcelain)
+
+                git add $gci.FullName
+                git commit -m $titleToBePosted
+                git push origin $branch
+
+                # Create new PR
+                Invoke-GithubRequest -Query "repos/$REPOSITORY/pulls" -Method Post -Body @{
+                    'title' = $titleToBePosted
+                    'base'  = $masterBranch
+                    'head'  = $branch
+                    'body'  = "- Closes #$IssueID"
+                }
+            } else {
+                Write-Log 'Push - Fix hash and push the commit'
+
+                Write-Log 'Git Status' @(git status --porcelain)
+
+                git add $gci.FullName
+                git commit -m "$titleToBePosted (Closes #$IssueID)"
+                git push
+            }
         }
+        Add-Comment -ID $IssueID -Message $message
     }
 }
 
