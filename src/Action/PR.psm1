@@ -187,7 +187,7 @@ function Test-PRFile {
             $outputV = @(& (Join-Path $BINARIES_FOLDER 'checkver.ps1') -App $manifest.Basename -Dir $MANIFESTS_LOCATION -Force *>&1)
             Write-log 'Output' $outputV
 
-            $checkver = ((($outputV.Count -ge 2) -and ($outputV -match "$($object.version)")))
+            $checkver = ((($outputV.Count -ge 2) -and ($outputV -match "$manifest.Basename \n$($object.version)")))
             $statuses.Add('Checkver', $checkver)
             Write-Log 'Checkver done'
 
