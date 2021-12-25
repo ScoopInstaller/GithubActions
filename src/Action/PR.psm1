@@ -186,9 +186,15 @@ function Test-PRFile {
             Write-Log 'Checkver'
             $outputV = @(& (Join-Path $BINARIES_FOLDER 'checkver.ps1') -App $manifest.Basename -Dir $MANIFESTS_LOCATION -Force *>&1)
             Write-log 'Output' $outputV
-            $joinedOuputV = $outputV -join " "
-            $checkver = $joinedOuputV -match "$([regex]::escape($manifest.Basename)):\s*$([regex]::escape($object.version))"
+            $joinedOutputV = $outputV -join " "
+            $checkverRegex = "$([regex]::escape($manifest.Basename)):\s*$([regex]::escape($object.version))"
+            $checkver = $joinedOutputV -match $checkverRegex
             $statuses.Add('Checkver', $checkver)
+            Write-Log 'joinedOutputV' $joinedOutputV
+            Write-Log 'manifest.Basename' $manifest.Basename
+            Write-Log 'object.version' $object.version
+            Write-Log 'checkverRegex' $checkverRegex
+            Write-Log 'checkver' $checkver
             Write-Log 'Checkver done'
 
             #region Autoupdate
