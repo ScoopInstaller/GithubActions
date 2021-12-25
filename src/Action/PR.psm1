@@ -193,6 +193,7 @@ function Test-PRFile {
             Write-Log 'joinedOutputV' $joinedOutputV
             Write-Log 'manifest.Basename' $manifest.Basename
             Write-Log 'object.version' $object.version
+            Write-Log 'object.version-alt' $($object.version)
             Write-Log 'checkverRegex' $checkverRegex
             Write-Log 'checkver' $checkver
             Write-Log 'Checkver done'
