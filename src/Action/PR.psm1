@@ -188,8 +188,8 @@ function Test-PRFile {
             Write-log 'Output' $outputV
 
             $checkver = ((($outputV.Count -ge 2) -and ($outputV -match "$object.name: \n$($object.version)")))
-            Write-log 'var val check' $object.name
-            Write-log 'var val check' $manifest.Basename
+            Write-log 'var val check object.name' $object.name
+            Write-log 'var val check manifest.Basename' $manifest.Basename
             $statuses.Add('Checkver', $checkver)
             Write-Log 'Checkver done'
 
