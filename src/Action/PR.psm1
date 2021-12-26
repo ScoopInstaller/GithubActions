@@ -186,9 +186,11 @@ function Test-PRFile {
             Write-Log 'Checkver'
             $outputV = @(& (Join-Path $BINARIES_FOLDER 'checkver.ps1') -App $manifest.Basename -Dir $MANIFESTS_LOCATION -Force *>&1)
             Write-log 'Output' $outputV
-
-            # If there are more than 2 lines and second line is not version, there is problem
-            $checkver = ((($outputV.Count -ge 2) -and ($outputV[1] -like "$($object.version)")))
+            
+            $joinedOutputV = $outputV -join " "
+            # Try to match "<manifest-name>: <version>" from outputV
+            $checkverRegex = "$([regex]::escape($manifest.Basename)):\s*$([regex]::escape($($object.version)))"
+            $checkver = $joinedOutputV -match $checkverRegex
             $statuses.Add('Checkver', $checkver)
             Write-Log 'Checkver done'
 
