@@ -7,8 +7,9 @@ Set of automated actions, which bucket maintainers can use to save time managing
 1. `GITHUB_TOKEN`
     - **REQUIRED**
     - Use `${{ secrets.GITHUB_TOKEN }}`
-1. `USER_EMAIL`†
+1. `USER_EMAIL`
     - String
+    - Optional
 1. `SCOOP_BRANCH`
     - String
     - If specified, scoop config 'SCOOP_BRANCH' will be configured and scoop updated
@@ -19,18 +20,13 @@ Set of automated actions, which bucket maintainers can use to save time managing
     - String
     - List of manifest names joined with `,` used as parameter for auto-pr utility.
 
-†: `USER_EMAIL` environment variable is not required since [1.0.1](https://github.com/Ash258/Scoop-GithubActions/releases/tag/1.0.1), but it is recommended.
-If email is not specified, commits will not be pushed using account bounded to the email. This will lead to not adding contributions. ([See as example commit from github action without user's email](https://github.com/phips28/gh-action-bump-version/commit/adda5b22b3c785eb69d328f91dadb49a4c34a82e))
-
 ## Available actions
 
 ### Excavator
 
-- ❗❗❗ [Protected master branches are not supported, due to security concern from GitHub side](https://github.community/t5/GitHub-Actions/How-to-push-to-protected-branches-in-a-GitHub-Action/m-p/30710/highlight/true#M526) ❗❗❗
+- [Protected default branches are not supported.](https://github.community/t5/GitHub-Actions/How-to-push-to-protected-branches-in-a-GitHub-Action/m-p/30710/highlight/true#M526)
 - Periodically execute automatic updates for all manifests
-- Refer to [help page](https://help.github.com/en/articles/events-that-trigger-workflows#scheduled-events) for configuration formats
-- <https://github.com/ScoopInstaller/Excavator> alternative
-    - No need to have custom device, which could run docker or scheduled task for auto-pr 24/7
+- Refer to [workflow triggers](https://help.github.com/en/articles/events-that-trigger-workflows#scheduled-events) for configuration formats
 
 ### Issues
 
@@ -106,7 +102,6 @@ jobs:
     - name: Excavator
       uses: ScoopInstaller/Scoop-GithubActions@main
       env:
-        USER_EMAIL: youremail@mail.com
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         SKIP_UPDATED: '1'
 
@@ -125,7 +120,6 @@ jobs:
       uses: ScoopInstaller/Scoop-GithubActions@main
       if: github.event.action == 'opened' || (github.event.action == 'labeled' && contains(github.event.issue.labels.*.name, 'verify'))
       env:
-        USER_EMAIL: youremail@mail.com # Not needed, but recommended
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 #.github\workflows\issue_commented.yml
@@ -143,7 +137,6 @@ jobs:
       uses: ScoopInstaller/Scoop-GithubActions@main
       if: startsWith(github.event.comment.body, '/verify')
       env:
-        USER_EMAIL: youremail@mail.com # Not needed, but recommended
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 #.github\workflows\pull_request.yml
@@ -160,6 +153,5 @@ jobs:
     - name: Pull Request Validator
       uses: ScoopInstaller/Scoop-GithubActions@main
       env:
-        USER_EMAIL: youremail@mail.com # Not needed, but recommended
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
