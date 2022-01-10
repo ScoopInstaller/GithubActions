@@ -69,8 +69,8 @@ It could be one of these:
 
 As soon as a PR **is created** or the **comment `/verify` is posted** to it, validation tests are executed (see [wiki](https://github.com/Ash258/Scoop-GithubActions/wiki/Pull-Request-Checks) for detailed desciption):
 
-- ❗❗ [Pull request created from forked repository cannot be verified due to security concern from GitHub side](https://github.com/Ash258/Scoop-GithubActions/issues/42) ❗❗
-    - Manual `/verify` comment is needed (<https://github.com/Ash258/GithubActionsBucketForTesting/pull/176>)
+- ❗❗ **Pull request created from forked repository cannot be verified due to security concern from GitHub side** ❗❗
+    - Manual `/verify` comment is needed
 
 #### Overview of validatiors
 
