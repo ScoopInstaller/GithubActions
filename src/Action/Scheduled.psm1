@@ -14,10 +14,11 @@ function Initialize-Scheduled {
     }
 
     $params = @{
-        'Dir'         = $MANIFESTS_LOCATION
-        'Upstream'    = "${REPOSITORY}:${_BRANCH}"
-        'Push'        = $true
-        'SkipUpdated' = [bool] $env:SKIP_UPDATED
+        'Dir'          = $MANIFESTS_LOCATION
+        'Upstream'     = "${REPOSITORY}:${_BRANCH}"
+        'OriginBranch' = $_BRANCH
+        'Push'         = $true
+        'SkipUpdated'  = [bool] $env:SKIP_UPDATED
     }
     if ($env:SPECIAL_SNOWFLAKES) { $params.Add('SpecialSnowflakes', ($env:SPECIAL_SNOWFLAKES -split ',')) }
 
