@@ -18,7 +18,8 @@ function Initialize-Scheduled {
         'Upstream'     = "${REPOSITORY}:${_BRANCH}"
         'OriginBranch' = $_BRANCH
         'Push'         = $true
-        'SkipUpdated'  = [bool] $env:SKIP_UPDATED
+        'SkipUpdated'  = ($env:SKIP_UPDATED -eq '1')
+        'ThrowError'   = ($env:THROW_ERROR -eq '1')
     }
     if ($env:SPECIAL_SNOWFLAKES) { $params.Add('SpecialSnowflakes', ($env:SPECIAL_SNOWFLAKES -split ',')) }
 

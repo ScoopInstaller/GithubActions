@@ -14,8 +14,11 @@ Set of automated actions, which bucket maintainers can use to save time managing
     - String
     - If specified, scoop config 'SCOOP_BRANCH' will be configured and scoop updated
 1. `SKIP_UPDATED`
-    - Anything. Use `1`
-    - If specified, log of checkver utility will not print latest versions
+    - String. Use `'1'` or `'0'`
+    - If enabled, log of checkver utility will not print latest versions
+1. `THROW_ERROR`
+    - String. Use `'1'` or `'0'`
+    - If enabled, error from checkver utility will be thrown as exception and cause the run to fail
 1. `SPECIAL_SNOWFLAKES`
     - String
     - List of manifest names joined with `,` used as parameter for auto-pr utility.
@@ -104,6 +107,7 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         SKIP_UPDATED: '1'
+        THROW_ERROR: '0'
 
 #.github\workflows\issues.yml
 on:
