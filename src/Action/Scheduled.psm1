@@ -19,9 +19,9 @@ function Initialize-Scheduled {
         'OriginBranch' = $_BRANCH
         'Push'         = $true
         'SkipUpdated'  = ($env:SKIP_UPDATED -eq '1')
-        'ThrowError'   = ($env:THROW_ERROR -eq '1')
     }
     if ($env:SPECIAL_SNOWFLAKES) { $params.Add('SpecialSnowflakes', ($env:SPECIAL_SNOWFLAKES -split ',')) }
+    if ($env:THROW_ERROR -eq '1') { $params.Add('ThrowError', $true) }
 
     $env:SCOOP_CHECKVER_TOKEN = $env:GITHUB_TOKEN
 
