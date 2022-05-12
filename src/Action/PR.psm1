@@ -280,7 +280,7 @@ function Initialize-PR {
     Write-Log 'PR initialized'
 
     # required to access releases in private GitHub repos
-    $env:SCOOP_CHECKVER_TOKEN = $env:GITHUB_TOKEN
+    $env:SCOOP_GH_TOKEN = $env:GITHUB_TOKEN
 
     #region Stage 1 - Repository initialization
     $commented = Start-PR
