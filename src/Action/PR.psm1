@@ -191,6 +191,15 @@ function Test-PRFile {
             # Try to match "<manifest-name>: <version>" from outputV
             $checkverRegex = "$([regex]::escape($manifest.Basename)):\s*$([regex]::escape($($object.version)))"
             $checkver = $joinedOutputV -match $checkverRegex
+            # Avoid $version in checkver script
+            if ($object.checkver.script) {
+                if ($object.checkver.script -is [string]) { $checkver_script = $object.checkver.script }
+                else { $checkver_script = $object.checkver.script -join '`r`n' }
+                if ($checkver_script.Contains('$version')) {
+                    Write-Log 'Error in checkver: $version should not be used in checkver.script'
+                    $checkver = $false
+                }
+            }
             $statuses.Add('Checkver', $checkver)
             Write-Log 'Checkver done'
 
