@@ -141,10 +141,11 @@ function Test-Downloading {
             '- Blocked site (Great Firewall of China, Corporate restrictions, ...)'
             '- Antivirus settings blocking URL/downloaded file'
             '- Proxy configuration'
+            '- Aria2 being unreliable (if you''re facing problems with aria2, disable it by running `scoop config aria2-enabled false` and try again)'
         )
 
         Add-Comment -ID $IssueID -Comment $message
-        # TODO: Close??
+        Close-Issue -ID $IssueID
     } else {
         Write-Log 'Broken URLS' $broken_urls
 
