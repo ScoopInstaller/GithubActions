@@ -255,7 +255,7 @@ function Test-NestedBucket {
             New-Issue -Title $adopt -Body @(
                 'Buckets without nested `bucket` folder are not supported. You will not be able to use actions without it.',
                 '',
-                'See <https://github.com/Ash258/GenericBucket> for the most optimal bucket structure.'
+                'See <https://github.com/ScoopInstaller/BucketTemplate> for the most optimal bucket structure.'
             )
         }
 
