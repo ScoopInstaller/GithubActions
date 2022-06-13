@@ -70,7 +70,7 @@ It could be one of these:
 
 ### Pull Requests
 
-As soon as a PR **is created** or the **comment `/verify` is posted** to it, validation tests are executed (see [wiki](https://github.com/Ash258/Scoop-GithubActions/wiki/Pull-Request-Checks) for detailed desciption):
+As soon as a PR **is created** or the **comment `/verify` is posted** to it, validation tests are executed (see [wiki](https://github.com/ScoopInstaller/GithubActions/wiki/Pull-Request-Checks)) for detailed desciption):
 
 - ❗❗ **Pull request created from forked repository cannot be verified due to security concern from GitHub side** ❗❗
     - Manual `/verify` comment is needed
