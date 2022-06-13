@@ -98,7 +98,7 @@ function New-FinalMessage {
     $labelsToRemove = @()
     # Add some more human friendly message
     if ($env:NON_ZERO_EXIT) {
-        $message.Insert(0, '[Your changes do not pass checks.](https://github.com/Ash258/Scoop-GithubActions/wiki/Pull-Request-Checks)')
+        $message.Insert(0, '[Your changes do not pass checks.](https://github.com/ScoopInstaller/GithubActions/wiki/Pull-Request-Checks)')
         $labelsToAdd += 'manifest-fix-needed'
         $labelsToRemove += 'review-needed'
     } else {
