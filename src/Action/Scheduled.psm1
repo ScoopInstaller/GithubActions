@@ -7,8 +7,8 @@ function Initialize-Scheduled {
     #>
     Write-Log 'Scheduled initialized'
 
-    if ($env:GITHUB_BRANCH) {
-        $_BRANCH = $env:GITHUB_BRANCH
+    if ($env:GITHUB_REF_NAME) {
+        $_BRANCH = $env:GITHUB_REF_NAME
     } else {
         $_BRANCH = 'master'
     }
