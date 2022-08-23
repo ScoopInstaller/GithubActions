@@ -328,7 +328,7 @@ function Initialize-PR {
     # In case of forked repository it needs to be '/github/forked_workspace'
     Get-Location | Write-Log 'Context of action'
     (Get-ChildItem $BUCKET_ROOT | Select-Object -ExpandProperty Basename) -join ', ' | Write-log 'Root Files'
-    (Get-ChildItem $MANIFESTS_LOCATION | Select-Object -ExpandProperty Basename) -join ', ' | Write-log 'Manifests'
+    (Get-ChildItem $MANIFESTS_LOCATION -Filter '*.json' -Recurse | Select-Object -ExpandProperty Basename) -join ', ' | Write-log 'Manifests'
 
     # Do not run checks on removed files
     $files = Get-AllChangedFilesInPR $EVENT.number -Filter
