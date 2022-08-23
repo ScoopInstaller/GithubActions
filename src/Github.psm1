@@ -76,8 +76,15 @@ function Get-AllChangedFilesInPR {
         [Int] $ID,
         [Switch] $Filter
     )
-
-    $files = (Invoke-GithubRequest -Query "repos/$REPOSITORY/pulls/$ID/files").Content | ConvertFrom-Json
+    $filesno = ((Invoke-GithubRequest -Query "repos/$REPOSITORY/pulls/$ID").Content | ConvertFrom-Json).changed_files
+    if ($filesno -le 100) {
+        $files = (Invoke-GithubRequest -Query "repos/$REPOSITORY/pulls/$ID/files?per_page=$filesno").Content | ConvertFrom-Json
+    } else {
+        $files = @()
+        for ($i = 1; $i -lt ($filesno / 100) + 1; $i++) {
+            $files += (Invoke-GithubRequest -Query "repos/$REPOSITORY/pulls/$ID/files?per_page=100&page=$i").Content | ConvertFrom-Json
+        }
+    }
     if ($Filter) { $files = $files | Where-Object { $_.status -ne 'removed' } }
 
     return $files | Select-Object -Property filename, status
