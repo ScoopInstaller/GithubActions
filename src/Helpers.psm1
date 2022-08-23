@@ -94,7 +94,6 @@ function Initialize-NeededConfiguration {
         Initialize all settings, environment, configurations to work as expected.
     #>
 
-    scoop update
     scoop --version
     git --version
 
