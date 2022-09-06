@@ -107,7 +107,7 @@ function Initialize-NeededConfiguration {
     git config --global user.email $email
     git remote 'set-url' --push origin $rem
 
-    scoop config '7ZIPEXTRACT_USE_EXTERNAL' $true
+    scoop config USE_EXTERNAL_7ZIP $true
     scoop install 'hub' -g
     if (-not $env:HUB_VERBOSE) {
         $env:HUB_VERBOSE = '1'
@@ -128,7 +128,7 @@ function Get-Manifest {
     param([Parameter(Mandatory)][String] $Name)
 
     # It should alwyas be one item. Just in case use -First
-    $gciItem = Get-Childitem $MANIFESTS_LOCATION "$Name.*" | Select-Object -First 1
+    $gciItem = Get-ChildItem $MANIFESTS_LOCATION "$Name.*" | Select-Object -First 1
     $manifest = Get-Content $gciItem.Fullname -Raw | ConvertFrom-Json
 
     return $gciItem, $manifest
@@ -216,7 +216,7 @@ function New-CheckList {
                 if ($nestedState -eq $false) { $parentState = $false }
                 $result += _res $_ ($ind + 1) $nestedState
             }
-            ($result | Where-object { ($_.Item -eq $name) -and ($null -eq $_.State) }).State = $parentState
+            ($result | Where-Object { ($_.Item -eq $name) -and ($null -eq $_.State) }).State = $parentState
         }
     }
 

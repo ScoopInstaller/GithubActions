@@ -11,7 +11,7 @@ function Install-Scoop {
     & $f -RunAsAdmin
     if ($env:SCOOP_BRANCH) {
         Write-Log "Switching to branch: ${env:SCOOP_BRANCH}"
-        scoop config 'SCOOP_BRANCH' $env:SCOOP_BRANCH
+        scoop config SCOOP_BRANCH $env:SCOOP_BRANCH
         scoop update
     } else {
         scoop update
