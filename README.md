@@ -103,7 +103,7 @@ jobs:
     steps:
     - uses: actions/checkout@main
     - name: Excavator
-      uses: ScoopInstaller/Scoop-GithubActions@main
+      uses: ScoopInstaller/GithubActions@main
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         SKIP_UPDATED: '1'
@@ -138,7 +138,7 @@ jobs:
     steps:
     - uses: actions/checkout@main
     - name: Pull Request Validator
-      uses: ScoopInstaller/Scoop-GithubActions@main
+      uses: ScoopInstaller/GithubActions@main
       if: startsWith(github.event.comment.body, '/verify')
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -155,7 +155,7 @@ jobs:
     steps:
     - uses: actions/checkout@main
     - name: Pull Request Validator
-      uses: ScoopInstaller/Scoop-GithubActions@main
+      uses: ScoopInstaller/GithubActions@main
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
