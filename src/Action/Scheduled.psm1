@@ -24,7 +24,7 @@ function Initialize-Scheduled {
     if ($env:THROW_ERROR -eq '1') { $params.Add('ThrowError', $true) }
 
     # Respect any already added GH Tokens
-    if(-not $env:SCOOP_GH_TOKEN) {
+    if (-not $env:SCOOP_GH_TOKEN) {
         $env:SCOOP_GH_TOKEN = $env:GITHUB_TOKEN
     }
 
