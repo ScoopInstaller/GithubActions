@@ -23,7 +23,10 @@ function Initialize-Scheduled {
     if ($env:SPECIAL_SNOWFLAKES) { $params.Add('SpecialSnowflakes', ($env:SPECIAL_SNOWFLAKES -split ',')) }
     if ($env:THROW_ERROR -eq '1') { $params.Add('ThrowError', $true) }
 
-    $env:SCOOP_GH_TOKEN = $env:GITHUB_TOKEN
+    # Respect any already added GH Tokens
+    if (-not $env:SCOOP_GH_TOKEN) {
+        $env:SCOOP_GH_TOKEN = $env:GITHUB_TOKEN
+    }
 
     & (Join-Path $BINARIES_FOLDER 'auto-pr.ps1') @params
     # TODO: Post some comment?? Or other way how to publish logs for non collaborators.
