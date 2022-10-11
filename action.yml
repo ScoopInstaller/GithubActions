@@ -1,10 +1,12 @@
 name: Bucket Minion
-description: Set of actions to automate scoop bucket maintaining.
+description: Set of actions to automate Scoop bucket maintenance.
 author: ScoopInstaller Maintainers
-# TODO: Wait for proper powershell support
 runs:
-    using: node12
-    main: _init/index.js
+    using: composite
+    steps:
+      - run: ${{ github.action_path }}/action.ps1
+        shell: pwsh
+        
 branding:
     icon: package
     color: purple
