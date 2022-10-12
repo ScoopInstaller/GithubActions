@@ -1,12 +1,11 @@
-#!/usr/bin/env pwsh
-# $ErrorActionPreference = 'Stop' # Stop immediately on error, this will not lead into unwated comments.
+# Set Global Preference
+$Global:ErrorActionPreference = 'Continue'
+$Global:VerbosePreference = 'Continue'
 
 # Import all modules
 Join-Path $PSScriptRoot 'src' | Get-ChildItem -File | Select-Object -ExpandProperty Fullname | Import-Module
 
 Install-Scoop
-
-$VerbosePreference = 'Continue' # Preserve verbose in logs
 
 Test-NestedBucket
 Initialize-NeededConfiguration
