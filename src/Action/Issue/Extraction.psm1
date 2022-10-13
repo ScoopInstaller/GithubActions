@@ -21,7 +21,7 @@ function Test-ExtractDir {
         for ($i = 0; $i -lt $urls.Count; ++$i) {
             $url = $urls[$i]
             $dir = $extract_dirs[$i]
-            dl_with_cache $Manifest $version $url $null $manifest_o.cookie $true
+            Invoke-CachedDownload $Manifest $version $url $null $manifest_o.cookie $true
 
             $cached = cache_path $Manifest $version $url | Resolve-Path | Select-Object -ExpandProperty Path
             Write-Log "FILEPATH $url, ${arch}: $cached"
