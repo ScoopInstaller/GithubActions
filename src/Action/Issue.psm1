@@ -111,7 +111,7 @@ function Test-Downloading {
     # Invoke-CachedAria2Download $Manifest 'DL' $object (default_architecture) "/" $object.cookies $true
 
     # exit 0
-    foreach ($arch in @('64bit', '32bit')) {
+    foreach ($arch in @('64bit', '32bit', 'arm64')) {
         $urls = @(url $object $arch)
 
         foreach ($url in $urls) {

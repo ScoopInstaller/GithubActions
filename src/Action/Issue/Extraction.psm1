@@ -11,7 +11,7 @@ function Test-ExtractDir {
     $failed = $false
     $version = 'EXTRACT_DIR'
 
-    foreach ($arch in @('64bit', '32bit')) {
+    foreach ($arch in @('64bit', '32bit', 'arm64')) {
         $urls = @(url $manifest_o $arch)
         $extract_dirs = @(extract_dir $manifest_o $arch)
 
