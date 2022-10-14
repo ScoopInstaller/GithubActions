@@ -186,8 +186,8 @@ function Test-PRFile {
             Write-Log 'Checkver'
             $outputV = @(& (Join-Path $BINARIES_FOLDER 'checkver.ps1') -App $manifest.Basename -Dir $MANIFESTS_LOCATION -Force *>&1)
             Write-log 'Output' $outputV
-            
-            $joinedOutputV = $outputV -join " "
+
+            $joinedOutputV = $outputV -join ' '
             # Try to match "<manifest-name>: <version>" from outputV
             $checkverRegex = "$([regex]::escape($manifest.Basename)):\s*$([regex]::escape($($object.version)))"
             $checkver = $joinedOutputV -match $checkverRegex
@@ -214,7 +214,7 @@ function Test-PRFile {
                 $statuses.Add('Autoupdate', $autoupdate)
 
                 # There is some hash property defined in autoupdate
-                if ((hash $object.autoupdate '32bit') -or (hash $object.autoupdate '64bit')) {
+                if ((hash $object.autoupdate '32bit') -or (hash $object.autoupdate '64bit') -or (hash $object.autoupdate 'arm64')) {
                     $result = $autoupdate
                     if ($result) {
                         # If any result contains any item with 'Could not find hash*' there is hash extraction error.
