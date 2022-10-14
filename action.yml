@@ -2,11 +2,11 @@ name: Bucket Minion
 description: Set of actions to automate Scoop bucket maintenance.
 author: ScoopInstaller Maintainers
 runs:
-    using: composite
-    steps:
-      - run: ${{ github.action_path }}/action.ps1
-        shell: pwsh
-        
+  using: composite
+  steps:
+    - run: ${{ github.action_path }}/action.ps1
+      shell: pwsh
+
 branding:
-    icon: package
-    color: purple
+  icon: package
+  color: purple
