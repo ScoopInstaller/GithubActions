@@ -10,9 +10,12 @@ Set of automated actions, which bucket maintainers can use to save time managing
 1. `USER_EMAIL`
     - String
     - Optional
+1. `SCOOP_REPO`
+    - String
+    - If specified, scoop config 'scoop_repo' will be configured and scoop updated
 1. `SCOOP_BRANCH`
     - String
-    - If specified, scoop config 'SCOOP_BRANCH' will be configured and scoop updated
+    - If specified, scoop config 'scoop_branch' will be configured and scoop updated
 1. `SKIP_UPDATED`
     - String. Use `'1'` or `'0'`
     - If enabled, log of checkver utility will not print latest versions
