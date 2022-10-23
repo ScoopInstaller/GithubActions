@@ -214,7 +214,7 @@ function Test-PRFile {
                 $statuses.Add('Autoupdate', $autoupdate)
 
                 # There is some hash property defined in autoupdate
-                if ((hash $object.autoupdate '32bit') -or (hash $object.autoupdate '64bit') -or (hash $object.autoupdate 'arm64')) {
+                if ($object.autoupdate.hash -or $object.autoupdate.architecture.PSObject.Properties.Value.hash) {
                     $result = $autoupdate
                     if ($result) {
                         # If any result contains any item with 'Could not find hash*' there is hash extraction error.
