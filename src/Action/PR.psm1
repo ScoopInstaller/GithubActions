@@ -14,6 +14,9 @@ function Start-PR {
         'opened' {
             Write-Log 'Opened PR'
         }
+        'synchronize' {
+            Write-Log 'Updated PR'
+        }
         'created' {
             Write-Log 'Commented PR'
 
@@ -37,7 +40,7 @@ function Start-PR {
             }
         }
         default {
-            Write-Log 'Only action ''opened'' is supported'
+            Write-Log 'Only action "opened", "synchronize" and "created" are supported'
             $commented = $null
         }
     }
@@ -301,11 +304,11 @@ function Initialize-PR {
         Write-Log 'Forked repository'
 
         # There is no need to run whole action under forked repository due to permission problem
-        if ($commented -eq $false) {
-            Write-Log 'Cannot comment with read only token'
-            # TODO: Execute it and adopt pester like checks
-            return
-        }
+        # if ($commented -eq $false) {
+        #     Write-Log 'Cannot comment with read only token'
+        #     # TODO: Execute it and adopt pester like checks
+        #     return
+        # }
 
         $REPOSITORY_forked = "$($head.repo.full_name):$($head.ref)"
         Write-Log 'Repo' $REPOSITORY_forked
