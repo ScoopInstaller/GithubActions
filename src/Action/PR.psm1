@@ -214,7 +214,8 @@ function Test-PRFile {
                 $statuses.Add('Autoupdate', $autoupdate)
 
                 # There is some hash property defined in autoupdate
-                if ($object.autoupdate.hash -or $object.autoupdate.architecture.PSObject.Properties.Value.hash) {
+                if ($object.autoupdate.hash -or ($object.autoupdate.architecture.PSObject.Properties.Value | Where-Object -Property hash)) {
+                    # Or use `($object | ConvertTo-Json -Depth 8) -match '(?s)"autoupdate".*?"hash"'`
                     $result = $autoupdate
                     if ($result) {
                         # If any result contains any item with 'Could not find hash*' there is hash extraction error.
