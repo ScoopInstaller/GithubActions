@@ -12,12 +12,16 @@ function Install-Scoop {
     if ($env:SCOOP_REPO) {
         Write-Log "Switching to repository: ${env:SCOOP_REPO}"
         scoop config scoop_repo $env:SCOOP_REPO
+        $needUpdate = $true
     }
     if ($env:SCOOP_BRANCH) {
         Write-Log "Switching to branch: ${env:SCOOP_BRANCH}"
         scoop config scoop_branch $env:SCOOP_BRANCH
+        $needUpdate = $true
     }
-    scoop update
+    if ($needUpdate) {
+        scoop update
+    }
 }
 
 Export-ModuleMember -Function Install-Scoop
