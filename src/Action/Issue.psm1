@@ -56,7 +56,7 @@ function Test-Hash {
             # TODO: Additional checks if this PR is really fixing same issue
 
             $message += ''
-            $message += "There is already pull request which take care of this issue. (#$prID)"
+            $message += "There is already a pull request which takes care of this issue. (#$prID)"
 
             Write-Log 'PR ID' $prID
             # Update PR description
