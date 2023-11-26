@@ -143,7 +143,8 @@ function Test-PRFile {
         # For Some reason -ErrorAction is not honored for convertfrom-json
         $old_e = $ErrorActionPreference
         $ErrorActionPreference = 'SilentlyContinue'
-        $object = Get-Content $manifest.Fullname -Raw | ConvertFrom-Json
+        # Formatting JSON with PowerShell 5.1, ensures that the JSON string conforms to the standard JSON format.
+        $object = Get-Content $manifest.Fullname -Raw | powershell -command 'ConvertFrom-Json -InputObject $input | ConvertTo-Json' | ConvertFrom-Json
         $ErrorActionPreference = $old_e
 
         if ($null -eq $object) {
