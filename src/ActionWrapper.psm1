@@ -1,5 +1,5 @@
 Join-Path $PSScriptRoot 'Helpers.psm1' | Import-Module
-Join-Path $PSScriptRoot 'Action' | Get-ChildItem -Filter '*.psm1' | Import-Module
+Join-Path $PSScriptRoot 'Action' | Get-ChildItem -Filter '*.psm1' | Select-Object -ExpandProperty Fullname | Import-Module
 
 function Invoke-Action {
     <#
