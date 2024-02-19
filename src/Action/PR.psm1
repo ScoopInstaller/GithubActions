@@ -301,12 +301,14 @@ function Initialize-PR {
     if ($head.repo.fork) {
         Write-Log 'Forked repository'
 
-        # There is no need to run whole action under forked repository due to permission problem
-        # if ($commented -eq $false) {
-        #     Write-Log 'Cannot comment with read only token'
-        #     # TODO: Execute it and adopt pester like checks
-        #     return
-        # }
+        if ($EVENT_TYPE -ne 'pull_request_target') {
+            # There is no need to run whole action under forked repository due to permission problem
+            if ($commented -eq $false) {
+                Write-Log 'Cannot comment with read only token'
+                # TODO: Execute it and adopt pester like checks
+                return
+            }
+        }
 
         $REPOSITORY_forked = "$($head.repo.full_name):$($head.ref)"
         Write-Log 'Repo' $REPOSITORY_forked
