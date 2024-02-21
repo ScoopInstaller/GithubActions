@@ -1,5 +1,5 @@
 Join-Path $PSScriptRoot 'Helpers.psm1' | Import-Module
-Join-Path $PSScriptRoot 'Action' | Get-ChildItem -Filter '*.psm1' | Import-Module
+Join-Path $PSScriptRoot 'Action' | Get-ChildItem -Filter '*.psm1' | Select-Object -ExpandProperty Fullname | Import-Module
 
 function Invoke-Action {
     <#
@@ -8,6 +8,7 @@ function Invoke-Action {
     #>
     switch ($EVENT_TYPE) {
         'pull_request' { Initialize-PR }
+        'pull_request_target' { Initialize-PR }
         'issue_comment' { Initialize-PR }
         'schedule' { Initialize-Scheduled }
         'workflow_dispatch' { Initialize-Scheduled }

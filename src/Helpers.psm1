@@ -128,7 +128,7 @@ function Get-Manifest {
     param([Parameter(Mandatory)][String] $Name)
 
     # It should alwyas be one item. Just in case use -First
-    $gciItem = Get-ChildItem $MANIFESTS_LOCATION "$Name.*" | Select-Object -First 1
+    $gciItem = Get-ChildItem -Path $MANIFESTS_LOCATION -Filter "$Name.json" -Recurse | Select-Object -First 1
     $manifest = Get-Content $gciItem.Fullname -Raw | ConvertFrom-Json
 
     return $gciItem, $manifest
