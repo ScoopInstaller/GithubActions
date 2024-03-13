@@ -10,7 +10,7 @@ function Test-Hash {
     $gci, $man = Get-Manifest $Manifest
     $manifestNameAsInBucket = $gci.BaseName
 
-    $outputH = @(& (Join-Path $BINARIES_FOLDER 'checkhashes.ps1') -App $gci.Basename -Dir $MANIFESTS_LOCATION -Force *>&1)
+    $outputH = @(& (Join-Path $BINARIES_FOLDER 'checkhashes.ps1') -App $manifestNameAsInBucket -Dir $MANIFESTS_LOCATION -Force *>&1)
     Write-Log 'Output' $outputH
 
     if (($outputH[-2] -like 'OK') -and ($outputH[-1] -like 'Writing*')) {
@@ -102,36 +102,21 @@ function Test-Hash {
 }
 
 function Test-Downloading {
-    param([String] $Manifest, [Int] $IssueID)
+    param (
+        [Parameter(Mandatory = $true)]
+        [String] $Manifest,
+        [Int] $IssueID
+    )
 
-    $null, $object = Get-Manifest $Manifest
+    $gci, $man = Get-Manifest $Manifest
 
-    $broken_urls = @()
-    # TODO:? Aria2 support
-    # Invoke-CachedAria2Download $Manifest 'DL' $object (default_architecture) "/" $object.cookies $true
+    $outputH = @(& (Join-Path $BINARIES_FOLDER 'checkurls.ps1') -App $gci.BaseName -Dir $MANIFESTS_LOCATION -Force *>&1)
+    $broken_urls = $outputH -match '>' -replace '.*?>', '-'
 
-    # exit 0
-    foreach ($arch in @('64bit', '32bit', 'arm64')) {
-        $urls = @(url $object $arch)
+    if (!$broken_urls) {
+        Write-Log 'Cannot reproduce'
 
-        foreach ($url in $urls) {
-            # Trim rename (#48)
-            $url = $url -replace '#/.*$', ''
-            Write-Log 'url' $url
-
-            try {
-                Invoke-CachedDownload $Manifest 'DL' $url $null $object.cookies $true
-            } catch {
-                $broken_urls += $url
-                continue
-            }
-        }
-    }
-
-    if ($broken_urls.Count -eq 0) {
-        Write-Log 'All OK'
-
-        $message = @(
+        Add-Comment -ID $IssueID -Message @(
             'Cannot reproduce.'
             ''
             'All files could be downloaded without any issue.'
@@ -144,14 +129,18 @@ function Test-Downloading {
             '- Aria2 being unreliable (if you''re facing problems with aria2, disable it by running `scoop config aria2-enabled false` and try again)'
         )
 
-        Add-Comment -ID $IssueID -Comment $message
+        Remove-Label -ID $IssueID -Label 'manifest-fix-needed'
         Close-Issue -ID $IssueID
     } else {
         Write-Log 'Broken URLS' $broken_urls
 
-        $string = ($broken_urls | Select-Object -Unique | ForEach-Object { "- $_" }) -join "`r`n"
+        Add-Comment -ID $IssueID -Message @(
+            'You are right. Thank you for reporting.',
+            '',
+            'Following URLs are not accessible:',
+            $broken_urls
+        )
         Add-Label -ID $IssueID -Label 'manifest-fix-needed', 'verified', 'help wanted'
-        Add-Comment -ID $IssueID -Comment 'Thank you for reporting. You are right.', '', 'Following URLs are not accessible:', '', $string
     }
 }
 
