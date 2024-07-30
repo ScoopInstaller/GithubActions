@@ -5,7 +5,7 @@ runs:
   using: composite
   steps:
     - run: ${{ github.action_path }}/action.ps1
-      shell: powershell
+      shell: pwsh
 
 branding:
   icon: package
