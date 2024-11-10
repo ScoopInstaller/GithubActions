@@ -25,7 +25,7 @@ Set of automated actions, which bucket maintainers can use to save time managing
 1. `SPECIAL_SNOWFLAKES`
     - String
     - List of manifest names joined with `,` used as parameter for auto-pr utility.
-1. `USE_CORE`
+1. `FORCE_PWSH`
     - String. Use `'1'` or `'0'`
     - If enabled, `pwsh` (PowerShell Core) will be used instead of `powershell` (Windows PowerShell).
     - Use `powershell` by default. More: [#38](https://github.com/ScoopInstaller/GithubActions/pull/38) [#39](https://github.com/ScoopInstaller/GithubActions/pull/39) [#46](https://github.com/ScoopInstaller/GithubActions/pull/46)
@@ -113,7 +113,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         SKIP_UPDATED: '1'
         THROW_ERROR: '0'
-        USE_CORE: '0'
+        FORCE_PWSH: '0'
 
 #.github\workflows\issues.yml
 on:
