@@ -140,11 +140,20 @@ function Test-PRFile {
         $manifest = Get-ChildItem $BUCKET_ROOT $f.filename
         Write-Log 'Manifest' $manifest
 
-        # For Some reason -ErrorAction is not honored for convertfrom-json
-        $old_e = $ErrorActionPreference
-        $ErrorActionPreference = 'SilentlyContinue'
-        $object = Get-Content $manifest.Fullname -Raw | ConvertFrom-Json
-        $ErrorActionPreference = $old_e
+        # Try to parse the JSON
+        $JsonContent = Get-Content -Path $manifest.Fullname -Raw
+        if ($PSVersionTable.PSEdition -eq 'Core' -and $PSVersionTable.PSVersion -ge '7.4') {
+            # PowerShell >= 7.4 can detect trailing commas with Test-Json
+            if (Test-Json -Json $JsonContent -ErrorAction 'Ignore') {
+                $object = ConvertFrom-Json -InputObject $JsonContent -ErrorAction 'SilentlyContinue'
+            }
+        } else {
+            # For Some reason -ErrorAction is not honored for convertfrom-json
+            $old_e = $ErrorActionPreference
+            $ErrorActionPreference = 'SilentlyContinue'
+            $object = ConvertFrom-Json -InputObject $JsonContent
+            $ErrorActionPreference = $old_e
+        }
 
         if ($null -eq $object) {
             Write-Log 'Conversion failed'
