@@ -167,7 +167,7 @@ function Test-PRFile {
         $statuses.Add('License', ([bool] $object.license))
         # TODO: More advanced license checks
 
-        # Don't use array for some manifest root properties they only contain one value
+        # Don't use array for some manifest root properties if they only contain one value
         $UnneccessaryArrays = [bool] $true
         foreach ($Item in '##', 'notes', 'pre_install', 'post_install', 'pre_uninstall', 'post_uninstall') {
             if (
