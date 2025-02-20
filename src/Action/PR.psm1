@@ -171,12 +171,12 @@ function Test-PRFile {
         $UnneccessaryArrays = [bool] $true
         foreach ($Item in '##', 'notes', 'pre_install', 'post_install', 'pre_uninstall', 'post_uninstall') {
             if (
-                $ManifestAsHashtable.'Keys'.Contains($Item) -and
-                $ManifestAsHashtable.$Item -is [array] -and
-                $ManifestAsHashtable.$Item.'Count' -le 1
+                $object.PSObject.Properties.Name.Contains($Item) -and
+                $object.$Item -is [array] -and
+                $object.$Item.'Count' -le 1
             ) {
                 $UnneccessaryArrays = [bool] $false
-                Write-Log ('"{0}" is array but only contains "{1}" element.' -f $Item, $ManifestAsHashtable.$Item.'Count'.ToString())
+                Write-Log ('"{0}" is array but only contains "{1}" element.' -f $Item, $object.$Item.'Count'.ToString())
             }
         }
         $statuses.Add('UnneccessaryArrays', $UnneccessaryArrays)
