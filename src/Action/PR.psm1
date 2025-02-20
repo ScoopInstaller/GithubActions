@@ -179,7 +179,7 @@ function Test-PRFile {
                 Write-Log ('"{0}" is array but only contains "{1}" element.' -f $Item, $ManifestAsHashtable.$Item.'Count'.ToString())
             }
         }
-        $statuses.Add('UnneccessaryArrays',$UnneccessaryArrays)
+        $statuses.Add('UnneccessaryArrays', $UnneccessaryArrays)
         #endregion 1. Property checks
 
         #region 2. Hashes
