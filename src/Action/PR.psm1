@@ -163,9 +163,69 @@ function Test-PRFile {
         }
 
         #region 1. Property checks
+        Write-Log 'Property checks'
+
+        # Some properties that must be present
         $statuses.Add('Description', ([bool] $object.description))
         $statuses.Add('License', ([bool] $object.license))
+
+        # Check order of manifest root properties
+        $WantedKeysOrder = [string[]](
+            '$schema',
+            '##',
+            'version',
+            'description',
+            'homepage',
+            'license',
+            'notes',
+            'depends',
+            'suggest',
+            'url',
+            'hash',
+            'architecture',
+            'innosetup',
+            'extract_dir',
+            'extract_to',
+            'pre_install',
+            'installer',
+            'post_install',
+            'env_add_path',
+            'env_set',
+            'bin',
+            'shortcuts',
+            'persist',
+            'pre_uninstall',
+            'uninstaller',
+            'post_uninstall',
+            'psmodule',
+            'checkver',
+            'autoupdate',
+            'cookie'
+        )
+        if (
+            (
+                Compare-Object -ReferenceObject (
+                    [string[]](
+                        $object.PSObject.Properties.Name
+                    )
+                ) -DifferenceObject (
+                    [string[]](
+                        $object.PSObject.Properties.Name | Sort-Object -Property @{
+                            'Expression' = {[byte]($WantedKeysOrder.IndexOf($_))}
+                        }
+                    )
+                ) -SyncWindow 0 -PassThru
+            ).'Count' -gt 0
+        ) {
+            $statuses.Add('Order', $false)
+            Write-Log 'The order of manifest root properties is not following CONTRIBUTING.md#for-scoop-buckets'
+        } else {
+            $statuses.Add('Order', $true)
+            Write-Log 'The order of manifest root properties looks fine.'
+        }
+
         # TODO: More advanced license checks
+        Write-Log 'Property checks done'
         #endregion 1. Property checks
 
         #region 2. Hashes
