@@ -166,6 +166,20 @@ function Test-PRFile {
         $statuses.Add('Description', ([bool] $object.description))
         $statuses.Add('License', ([bool] $object.license))
         # TODO: More advanced license checks
+
+        # Don't use array for elements if they only contain one item
+        $UnneccessaryArrays = [bool] $true
+        foreach ($Item in '##', 'notes', 'pre_install', 'post_install', 'pre_uninstall', 'post_uninstall') {
+            if (
+                $ManifestAsHashtable.'Keys'.Contains($Item) -and
+                $ManifestAsHashtable.$Item -is [array] -and
+                $ManifestAsHashtable.$Item.'Count' -le 1
+            ) {
+                $UnneccessaryArrays = [bool] $false
+                Write-Log ('"{0}" is array but only contains "{1}" element.' -f $Item, $ManifestAsHashtable.$Item.'Count'.ToString())
+            }
+        }
+        $statuses.Add('UnneccessaryArrays',$UnneccessaryArrays)
         #endregion 1. Property checks
 
         #region 2. Hashes
