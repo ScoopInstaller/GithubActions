@@ -133,6 +133,7 @@ function Test-PRFile {
 
         # Reset variables from previous iteration
         $manifest = $null
+        $content = $null
         $object = $null
         $statuses = [Ordered] @{ }
 
@@ -141,18 +142,9 @@ function Test-PRFile {
         Write-Log 'Manifest' $manifest
 
         # Try to parse the JSON
-        $JsonContent = Get-Content -Path $manifest.Fullname -Raw
-        if ($PSVersionTable.PSEdition -eq 'Core' -and $PSVersionTable.PSVersion -ge '7.4') {
-            # PowerShell >= 7.4 can detect trailing commas with Test-Json
-            if (Test-Json -Json $JsonContent -ErrorAction 'Ignore') {
-                $object = ConvertFrom-Json -InputObject $JsonContent -ErrorAction 'SilentlyContinue'
-            }
-        } else {
-            # For Some reason -ErrorAction is not honored for convertfrom-json
-            $old_e = $ErrorActionPreference
-            $ErrorActionPreference = 'SilentlyContinue'
-            $object = ConvertFrom-Json -InputObject $JsonContent
-            $ErrorActionPreference = $old_e
+        $content = Get-Content -Path $manifest.FullName -Raw
+        if (Test-Json -Json $content -ErrorAction 'SilentlyContinue') {
+            $object = ConvertFrom-Json -InputObject $content -ErrorAction 'SilentlyContinue'
         }
 
         if ($null -eq $object) {
@@ -163,7 +155,7 @@ function Test-PRFile {
 
             if ($manifest.Extension -eq '.json') {
                 Write-Log 'Invalid JSON'
-                $invalid += $manifest.Basename
+                $invalid += $manifest.BaseName
             } else {
                 Write-Log 'Not manifest at all'
             }
