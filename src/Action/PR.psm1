@@ -128,6 +128,7 @@ function Test-PRFile {
 
     $check = @()
     $invalid = @()
+    $schema = Get-Content -Path $MANIFESTS_SCHEMA -Raw
     foreach ($f in $File) {
         Write-Log "Starting $($f.filename) checks"
 
@@ -143,7 +144,7 @@ function Test-PRFile {
 
         # Try to parse the JSON
         $content = Get-Content -Path $manifest.FullName -Raw
-        if (Test-Json -Json $content -ErrorAction 'SilentlyContinue') {
+        if (Test-Json -Json $content -Schema $schema -ErrorAction 'SilentlyContinue') {
             $object = ConvertFrom-Json -InputObject $content -ErrorAction 'SilentlyContinue'
         }
 
