@@ -168,6 +168,20 @@ function Test-PRFile {
         $statuses.Add('Description', ([bool] $object.description))
         $statuses.Add('License', ([bool] $object.license))
         # TODO: More advanced license checks
+
+        # Don't use array for some manifest root properties if they only contain one value
+        $UnneccessaryArrays = [bool] $true
+        foreach ($Item in '##', 'notes', 'pre_install', 'post_install', 'pre_uninstall', 'post_uninstall') {
+            if (
+                $object.PSObject.Properties.Name.Contains($Item) -and
+                $object.$Item -is [array] -and
+                $object.$Item.'Count' -le 1
+            ) {
+                $UnneccessaryArrays = [bool] $false
+                Write-Log ('"{0}" is array but only contains "{1}" element.' -f $Item, $object.$Item.'Count'.ToString())
+            }
+        }
+        $statuses.Add('UnneccessaryArrays', $UnneccessaryArrays)
         #endregion 1. Property checks
 
         #region 2. Hashes
