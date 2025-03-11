@@ -128,11 +128,13 @@ function Test-PRFile {
 
     $check = @()
     $invalid = @()
+    $schema = Get-Content -Path $MANIFESTS_SCHEMA -Raw
     foreach ($f in $File) {
         Write-Log "Starting $($f.filename) checks"
 
         # Reset variables from previous iteration
         $manifest = $null
+        $content = $null
         $object = $null
         $statuses = [Ordered] @{ }
 
@@ -140,11 +142,11 @@ function Test-PRFile {
         $manifest = Get-ChildItem $BUCKET_ROOT $f.filename
         Write-Log 'Manifest' $manifest
 
-        # For Some reason -ErrorAction is not honored for convertfrom-json
-        $old_e = $ErrorActionPreference
-        $ErrorActionPreference = 'SilentlyContinue'
-        $object = Get-Content $manifest.Fullname -Raw | ConvertFrom-Json
-        $ErrorActionPreference = $old_e
+        # Try to parse the JSON
+        $content = Get-Content -Path $manifest.FullName -Raw
+        if (Test-Json -Json $content -Schema $schema -ErrorAction 'SilentlyContinue') {
+            $object = ConvertFrom-Json -InputObject $content -ErrorAction 'SilentlyContinue'
+        }
 
         if ($null -eq $object) {
             Write-Log 'Conversion failed'
@@ -154,7 +156,7 @@ function Test-PRFile {
 
             if ($manifest.Extension -eq '.json') {
                 Write-Log 'Invalid JSON'
-                $invalid += $manifest.Basename
+                $invalid += $manifest.BaseName
             } else {
                 Write-Log 'Not manifest at all'
             }
