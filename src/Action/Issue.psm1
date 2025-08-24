@@ -10,7 +10,12 @@ function Test-Hash {
     $gci, $man = Get-Manifest $Manifest
     $manifestNameAsInBucket = $gci.BaseName
 
-    $outputH = @(& (Join-Path $BINARIES_FOLDER 'checkhashes.ps1') -App $manifestNameAsInBucket -Dir $MANIFESTS_LOCATION -Force *>&1)
+    try {
+        $outputH = @(& (Join-Path $BINARIES_FOLDER 'checkhashes.ps1') -App $manifestNameAsInBucket -Dir $MANIFESTS_LOCATION -Force *>&1)
+    } catch {
+        $outputH = @("Exception occurred: $($_.Exception.Message)", "$($_.ScriptStackTrace)")
+    }
+
     Write-Log 'Output' $outputH
 
     if (($outputH[-2] -like 'OK') -and ($outputH[-1] -like 'Writing*')) {
@@ -31,12 +36,31 @@ function Test-Hash {
         Remove-Label -ID $IssueID -Label 'hash-fix-needed'
         Close-Issue -ID $IssueID
     } elseif ($outputH[-1] -notlike 'Writing*') {
-        # There is some error
-        Write-Log 'Automatic check of hashes encounter some problems.'
+        Write-Log 'Automatic hash verification encountered some problems.'
 
-        Add-Label -Id $IssueID -Label 'manifest-fix-needed'
+        Add-Label -ID $IssueID -Label 'help wanted'
+
+        $message = @()
+
+        if ($outputH[0] -like 'Exception occurred: *') {
+            $message += @("> $($outputH[0])", "")
+        }
+
+        $message += @(
+            'Automatic hash verification encountered some problems.'
+            ''
+            'Potential causes:'
+            '- Network issue: Temporary connectivity loss, DNS resolution failures, or general network instability.'
+            '- GitHub API: Rate limiting or permission denied.'
+            "- Website Blocks: Anti-bot mechanisms or IP blocks targeting GitHub's hosted runner networks."
+            '- Internal exception: An error originating from verification script itself.'
+            ''
+            'Please try again later. If it persists, please reach out to the maintainers for help.'
+        )
+
+        Add-Comment -ID $IssueID -Message $message
     } else {
-        Write-Log 'Verified hash failed'
+        Write-Log 'Hash mismatch confirmed.'
 
         $masterBranch = ((Invoke-GithubRequest "repos/$REPOSITORY").Content | ConvertFrom-Json).default_branch
         $message = @('You are right. Thank you for reporting.')
