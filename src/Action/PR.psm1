@@ -107,12 +107,9 @@ function New-FinalMessage {
         $labelsToRemove += 'manifest-fix-needed'
     }
 
-    # TODO: Comment URL to action log
-    # Add-IntoArray $message "[_See log of all checks_](https://github.com/$REPOSITORY/runs/$RUN_ID)"
-
     Remove-Label -ID $prID -Label $labelsToRemove
     Add-Label -ID $prID -Label $labelsToAdd
-    Add-Comment -ID $prID -Message $message
+    Add-Comment -ID $prID -Message $message -AppendLogLink
 }
 
 function Test-PRFile {
