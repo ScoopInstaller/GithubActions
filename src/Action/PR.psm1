@@ -173,7 +173,13 @@ function Test-PRFile {
         #region 2. Hashes
         if ($object.version -ne 'nightly') {
             Write-Log 'Hashes'
-            $outputH = @(& (Join-Path $BINARIES_FOLDER 'checkhashes.ps1') -App $manifest.Basename -Dir $MANIFESTS_LOCATION *>&1)
+
+            try {
+                $outputH = @(& (Join-Path $BINARIES_FOLDER 'checkhashes.ps1') -App $manifest.Basename -Dir $MANIFESTS_LOCATION *>&1)
+            } catch {
+                $outputH = @("Exception occurred: $($_.Exception.Message)", "$($_.ScriptStackTrace)")
+            }
+
             Write-Log 'Output' $outputH
 
             # Everything should be all right when latest string in array will be OK
