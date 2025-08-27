@@ -19,13 +19,13 @@ function Test-Hash {
     Write-Log 'Output' $outputH
 
     if (($outputH[-2] -like 'OK') -and ($outputH[-1] -like 'Writing*')) {
-        Write-Log 'Cannot reproduce'
+        Write-Log 'Cannot reproduce.'
 
         Add-Comment -ID $IssueID -Message @(
-            'Cannot reproduce'
+            'Cannot reproduce.'
             ''
-            'Are you sure your scoop is up to date? Clean cache and reinstall'
-            "Please run ``scoop update; scoop cache rm $manifestNameAsInBucket;`` and update/reinstall application"
+            'Please ensure your Scoop is up to date, then clear the cache and retry the operation.',
+            "Run ``scoop update & scoop cache rm $manifestNameAsInBucket`` and update/reinstall application."
             ''
             'Hash mismatch could be caused by these factors:'
             ''
@@ -209,7 +209,7 @@ function Initialize-Issue {
             # TODO: Try to find specific version of arhived manifest
             "You reported version ``$problematicVersion``, but the latest available version is ``$($manifest_loaded.version)``."
             ''
-            "Run ``scoop update; scoop update $problematicName --force``"
+            "Run ``scoop update & scoop update $problematicName --force``"
         )
         Close-Issue -ID $id
         Remove-Label -Id $id -Label 'verify'
@@ -218,19 +218,19 @@ function Initialize-Issue {
 
     switch -Wildcard ($problem) {
         '*hash check*' {
-            Write-Log 'Hash check failed'
+            Write-Log 'Detected issue type' 'Hash check failed.'
             Test-Hash $problematicName $id
         }
         '*extract_dir*' {
-            Write-Log 'Extract dir error'
+            Write-Log 'Detected issue type' 'Extract directory error.'
             # TODO:
             # Test-ExtractDir $problematicName $id
         }
         '*download*failed*' {
-            Write-Log 'Download failed'
+            Write-Log 'Detected issue type' 'Download failed.'
             Test-Downloading $problematicName $id
         }
-        default { Write-Log 'Not supported issue action' }
+        default { Write-Log 'Unsupported issue type' $problem }
     }
 
     Remove-Label -ID $id -Label 'verify'

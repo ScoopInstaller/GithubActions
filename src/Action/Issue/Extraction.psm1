@@ -61,7 +61,7 @@ function Test-ExtractDir {
         Write-Log 'Everything all right' $failed
         $message = @(
             'Cannot reproduce. Are you sure your scoop is updated?'
-            "Try to run ``scoop update; scoop uninstall $Manifest; scoop install $Manifest``"
+            "Try to run ``scoop update & scoop uninstall $Manifest & scoop install $Manifest``"
             ''
             'See action log for additional info'
         )

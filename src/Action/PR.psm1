@@ -98,11 +98,12 @@ function New-FinalMessage {
     $labelsToRemove = @()
     # Add some more human friendly message
     if ($env:NON_ZERO_EXIT) {
-        $message.Insert(0, '[Your changes do not pass checks.](https://github.com/ScoopInstaller/GithubActions/wiki/Pull-Request-Checks)')
+        $message.InsertRange(0, @('Your changes did not pass all [checks](https://github.com/ScoopInstaller/GithubActions/wiki/Pull-Request-Checks).', '',
+                                  'Please address the issues in the manifest and comment starting with `/verify` to re-run the checks.'))
         $labelsToAdd += 'manifest-fix-needed'
         $labelsToRemove += 'review-needed'
     } else {
-        $message.InsertRange(0, @('All changes look good.', '', 'Wait for review from human collaborators.'))
+        $message.InsertRange(0, @('All changes look good.', '', 'Waiting for review from human collaborators.'))
         $labelsToAdd += 'review-needed'
         $labelsToRemove += 'manifest-fix-needed'
     }
