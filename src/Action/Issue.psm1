@@ -21,7 +21,7 @@ function Test-Hash {
     if (($outputH[-2] -like 'OK') -and ($outputH[-1] -like 'Writing*')) {
         Write-Log 'Cannot reproduce.'
 
-        Add-Comment -ID $IssueID -Message @(
+        Add-Comment -ID $IssueID -AppendLogLink -Message @(
             'Cannot reproduce.'
             ''
             'Are you sure your scoop is up to date? Clean cache and reinstall'
@@ -58,7 +58,7 @@ function Test-Hash {
             'Please try again later. If it persists, please reach out to the maintainers for help.'
         )
 
-        Add-Comment -ID $IssueID -Message $message
+        Add-Comment -ID $IssueID -Message $message -AppendLogLink
     } else {
         Write-Log 'Hash mismatch confirmed.'
 
@@ -121,7 +121,7 @@ function Test-Hash {
                 git push
             }
         }
-        Add-Comment -ID $IssueID -Message $message
+        Add-Comment -ID $IssueID -Message $message -AppendLogLink
     }
 }
 
@@ -140,7 +140,7 @@ function Test-Downloading {
     if (!$broken_urls) {
         Write-Log 'Cannot reproduce'
 
-        Add-Comment -ID $IssueID -Message @(
+        Add-Comment -ID $IssueID -AppendLogLink -Message @(
             'Cannot reproduce.'
             ''
             'All files could be downloaded without any issue.'
@@ -158,7 +158,7 @@ function Test-Downloading {
     } else {
         Write-Log 'Broken URLs' $broken_urls
 
-        Add-Comment -ID $IssueID -Message (@(
+        Add-Comment -ID $IssueID -AppendLogLink -Message (@(
                 'You are right. Thank you for reporting.',
                 '',
                 'Following URLs are not accessible:'
@@ -197,7 +197,7 @@ function Initialize-Issue {
     try {
         $null, $manifest_loaded = Get-Manifest $problematicName
     } catch {
-        Add-Comment -ID $id -Message "The specified manifest ``$problematicName`` does not exist in this bucket. Make sure you opened the issue in the correct bucket."
+        Add-Comment -ID $id -AppendLogLink -Message "The specified manifest ``$problematicName`` does not exist in this bucket. Make sure you opened the issue in the correct bucket."
         Add-Label -Id $id -Label 'invalid'
         Remove-Label -Id $id -Label 'verify'
         Close-Issue -ID $id
@@ -205,7 +205,7 @@ function Initialize-Issue {
     }
 
     if ($manifest_loaded.version -ne $problematicVersion) {
-        Add-Comment -ID $id -Message @(
+        Add-Comment -ID $id -AppendLogLink -Message @(
             # TODO: Try to find specific version of arhived manifest
             "You reported version ``$problematicVersion``, but the latest available version is ``$($manifest_loaded.version)``."
             ''

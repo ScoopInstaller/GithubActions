@@ -24,7 +24,7 @@ function Invoke-GithubRequest {
     $parameters = @{
         'Headers' = @{
             # Authorization token is neeeded for posting comments and to increase limit of requests
-            'Authorization' = "token $env:GITHUB_TOKEN"
+            'Authorization' = "Bearer $env:GITHUB_TOKEN"
         }
         'Method'  = $Method
         'Uri'     = "$baseUrl/$Query"
@@ -50,13 +50,20 @@ function Add-Comment {
         ID of issue / PR.
     .PARAMETER Message
         String or array of strings to be send as comment. Array will be joined with CRLF.
+    .PARAMETER AppendLogLink
+        If set, link to current job log will be appended to comment.
     #>
     param(
         [Parameter(Mandatory, ValueFromPipeline)]
         [Int] $ID,
         [Alias('Comment')]
-        [String[]] $Message
+        [String[]] $Message,
+        [switch] $AppendLogLink
     )
+
+    if ($AppendLogLink -and $Message) {
+        $Message += "`r`n[_Check the full log for details._]($(Get-LogURL -UseCache:$true))"
+    }
 
     return Invoke-GithubRequest -Query "repos/$REPOSITORY/issues/$ID/comments" -Method Post -Body @{ 'body' = ($Message -join "`r`n") }
 }
@@ -194,5 +201,88 @@ function Remove-Label {
     return $responses
 }
 
+function Get-JobID {
+    <#
+    .SYNOPSIS
+        Gets the ID for the current GitHub Actions job.
+        Caches the result to avoid redundant API calls.
+    .PARAMETER UseCache
+        Whether to use the cached job ID if available.
+    .PARAMETER RetryCount
+        Number of times to retry fetching the job ID if the initial attempt fails. Default is 3.
+    .PARAMETER RetryDelaySeconds
+        Number of seconds to wait between retries when fetching the job ID. Default is 3.
+    #>
+    param(
+        [Parameter(Mandatory)]
+        [Switch] $UseCache,
+        [ValidateRange(1, 10)]
+        [Int] $RetryCount = 3,
+        [ValidateRange(1, 30)]
+        [Int] $RetryDelaySeconds = 3
+    )
+
+    if ($UseCache -and $script:JOB_ID) {
+        return $script:JOB_ID
+    }
+
+    $jobId = $null
+
+    for ($i = 0; $i -lt $RetryCount; ++$i) {
+        try {
+            $response = Invoke-GithubRequest -Query "repos/$REPOSITORY/actions/runs/$RUN_ID/jobs"
+
+            $jobs = ($response.Content | ConvertFrom-Json).jobs
+
+            $jobId = $jobs | Where-Object { $_.name -eq $JOB } | Select-Object -ExpandProperty id -First 1
+
+            if ($jobId) {
+                # Cache the job ID
+                $script:JOB_ID = $jobId
+
+                break
+            }
+        } catch {
+            Start-Sleep -Seconds $RetryDelaySeconds
+        }
+    }
+
+    return $jobId
+}
+
+function Get-LogURL {
+    <#
+    .SYNOPSIS
+        Gets the URL for the current GitHub Actions job log.
+        If the job ID cannot be retrieved, this command returns the URL for the workflow run instead.
+    .PARAMETER UseCache
+        Whether to use the cached job ID if available.
+    .PARAMETER RetryCount
+        Number of times to retry fetching the job ID if the initial attempt fails. Default is 3.
+    .PARAMETER RetryDelaySeconds
+        Number of seconds to wait between retries when fetching the job ID. Default is 3.
+    #>
+    param(
+        [Parameter(Mandatory)]
+        [Switch] $UseCache,
+        [ValidateRange(1, 10)]
+        [Int] $RetryCount = 3,
+        [ValidateRange(1, 30)]
+        [Int] $RetryDelaySeconds = 3
+    )
+
+    $logURL = "https://github.com/$REPOSITORY/actions/runs/$RUN_ID"
+
+    $job_id = Get-JobID -UseCache:$UseCache -RetryCount $RetryCount -RetryDelaySeconds $RetryDelaySeconds
+
+    if ($job_id) {
+        $logURL += "/job/$job_id"
+    }
+
+    Write-Log "Log URL" $logURL
+
+    return $logURL
+}
+
 Export-ModuleMember -Function Invoke-GithubRequest, Add-Comment, Get-AllChangedFilesInPR, New-Issue, Close-Issue, `
-    Add-Label, Remove-Label
+    Add-Label, Remove-Label, Get-JobID, Get-LogURL

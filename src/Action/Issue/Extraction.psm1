@@ -67,7 +67,7 @@ function Test-ExtractDir {
         )
     }
 
-    Add-Comment -ID $IssueID -Message $message
+    Add-Comment -ID $IssueID -Message $message -AppendLogLink
 }
 
 Export-ModuleMember -Function Test-ExtractDir
