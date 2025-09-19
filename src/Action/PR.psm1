@@ -162,6 +162,26 @@ function Test-PRFile {
             continue
         }
 
+        #region Lint
+        Write-Log 'Lint'
+
+        try {
+            & (Join-Path $BINARIES_FOLDER 'formatjson.ps1') -App $manifest.Basename -Dir $MANIFESTS_LOCATION
+
+            $contentFormated = Get-Content -Path $manifest.FullName -Raw
+
+            $lint = $content -eq $contentFormated
+        } catch {
+            $lint = $false
+
+            Write-Log 'Lint Checks' @("Exception occurred: $($_.Exception.Message)", "$($_.ScriptStackTrace)")
+        }
+
+        $statuses.Add('Lint', $lint)
+
+        Write-Log 'Lint done'
+        #endregion
+
         #region 1. Property checks
         $statuses.Add('Description', ([bool] $object.description))
         $statuses.Add('License', ([bool] $object.license))
