@@ -1,4 +1,5 @@
 Join-Path $PSScriptRoot '..\Helpers.psm1' | Import-Module
+Join-Path $PSScriptRoot 'Issue' | Get-ChildItem -Filter '*.psm1' | Select-Object -ExpandProperty Fullname | Import-Module
 
 function Test-Hash {
     param (
@@ -43,7 +44,7 @@ function Test-Hash {
         $message = @()
 
         if ($outputH[0] -like 'Exception occurred: *') {
-            $message += @("> $($outputH[0])", "")
+            $message += @("> $($outputH[0])", '')
         }
 
         $message += @(
@@ -178,6 +179,7 @@ function Initialize-Issue {
     $title = $EVENT.issue.title
     $id = $EVENT.issue.number
     $label = $EVENT.issue.labels.name
+    $body = $EVENT.issue.body
 
     # Only labeled action with verify label should continue
     if (($EVENT.action -eq 'labeled') -and ($label -notcontains 'verify')) {
@@ -216,19 +218,18 @@ function Initialize-Issue {
         return
     }
 
-    switch -Wildcard ($problem) {
-        '*hash check*' {
+    switch -Regex ($problem) {
+        'hash check' {
             Write-Log 'Detected issue type' 'Hash check failed.'
             Test-Hash $problematicName $id
         }
-        '*extract_dir*' {
-            Write-Log 'Detected issue type' 'Extract directory error.'
-            # TODO:
-            # Test-ExtractDir $problematicName $id
-        }
-        '*download*failed*' {
+        'download.*failed' {
             Write-Log 'Detected issue type' 'Download failed.'
             Test-Downloading $problematicName $id
+        }
+        '(decompress|extract).*error' {
+            Write-Log 'Detected issue type' 'Decompression/Extraction error.'
+            Show-ExtractionHelpTips $problematicName $id $body
         }
         default { Write-Log 'Unsupported issue type' $problem }
     }

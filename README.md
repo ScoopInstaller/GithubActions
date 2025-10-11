@@ -70,14 +70,20 @@ It could be one of these:
             1. Labels `manifest-fix-needed`, `verified`, `help wanted` are added
         1. All URLs could be downloaded without problem
             1. Possible causes are attached in comment
+- **Decompression/Extraction error**
+    1. Comment to issue is posted
+        1. If one or more specific extraction tool names (7zip|msi|innounp|dark) are mentioned in the issue description
+            1. Only related extraction help tips will be added in comment
+        1. None of the specific extraction tool names are mentioned in the issue description
+            1. All extraction help tips will be added in comment
 
 ### Pull Requests
 
-As soon as a PR **is created** or the **comment `/verify` is posted** to it, validation tests are executed (see [wiki](https://github.com/ScoopInstaller/GithubActions/wiki/Pull-Request-Checks)) for detailed desciption):
+As soon as a PR **is created** or a **comment starting with `/verify` is posted** to it, validation tests are executed (see [wiki](https://github.com/ScoopInstaller/GithubActions/wiki/Pull-Request-Checks) for detailed description):
 
-#### Overview of validatiors
+#### Overview of validators
 
-1. JSON standard format check 
+1. JSON standard format check
 1. Required properties (`License`, `Description`) are in place
 1. Hashes of files are correct
 1. Checkver functionality
