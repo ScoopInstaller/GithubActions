@@ -201,6 +201,35 @@ function Remove-Label {
     return $responses
 }
 
+function Get-RateLimit {
+    <#
+    .SYNOPSIS
+        Retrieves the current GitHub API rate limit status.
+        Returns the rate limit information as a deserialized JSON object.
+    .PARAMETER Core
+        If specified, returns only the core rate limit information.
+    #>
+    param(
+        [Switch] $Core
+    )
+
+    $rateLimit = $null
+
+    try {
+        $response = Invoke-GithubRequest -Query 'rate_limit'
+
+        $rateLimit = $response.Content | ConvertFrom-Json
+    } catch {
+        Write-Log -Summary "Failed to retrieve rate limit information.`n Exception occurred: $($_.Exception.Message)"
+    }
+
+    if ($Core -and $rateLimit -and $rateLimit.resources -and $rateLimit.resources.core) {
+        $rateLimit = $rateLimit.resources.core
+    }
+
+    return $rateLimit
+}
+
 function Get-JobID {
     <#
     .SYNOPSIS
@@ -279,10 +308,10 @@ function Get-LogURL {
         $logURL += "/job/$job_id"
     }
 
-    Write-Log "Log URL" $logURL
+    Write-Log 'Log URL' $logURL
 
     return $logURL
 }
 
 Export-ModuleMember -Function Invoke-GithubRequest, Add-Comment, Get-AllChangedFilesInPR, New-Issue, Close-Issue, `
-    Add-Label, Remove-Label, Get-JobID, Get-LogURL
+    Add-Label, Remove-Label, Get-RateLimit, Get-JobID, Get-LogURL
