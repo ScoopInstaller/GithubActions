@@ -18,7 +18,11 @@ Get-ChildItem (Join-Path $env:SCOOP_HOME 'lib') '*.ps1' | ForEach-Object { . $_.
 
 Write-Log 'FULL EVENT' $EVENT_RAW
 
+Write-Log 'GITHUB API RATE LIMIT' ((Get-RateLimit).resources.core | ConvertTo-Json -Compress)
+
 Invoke-Action
+
+Write-Log 'GITHUB API RATE LIMIT' ((Get-RateLimit).resources.core | ConvertTo-Json -Compress)
 
 Write-Log 'Number of Github Requests' $env:GH_REQUEST_COUNTER
 
