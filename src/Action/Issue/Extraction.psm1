@@ -103,19 +103,17 @@ function Show-ExtractionHelpTips {
         )
         'innounp' = @(
             '- Inno Setup package decompression/extraction error',
-            '  Make sure you have `innounp-unicode` removed and the latest version of `innounp` installed:',
-            '  ```',
-            '  scoop uninstall innounp-unicode',
-            '  ```',
-            '  ```',
-            '  scoop install main/innounp',
-            '  ```',
+            'Make sure you have the latest version of `innounp` or `innounp-unicode` installed:',
             '  ```',
             '  scoop update innounp',
             '  ```',
-            '  Sometimes, the latest version of innounp may not support unpacking the latest Inno Setup packages.',
-            '  You might need to wait for an upstream update of innounp.',
-            '  See: https://github.com/jrathlev/InnoUnpacker-Windows-GUI?tab=readme-ov-file#inspect-and-unpack-innosetup-archives'
+            '  ```',
+            '  scoop update innounp-unicode',
+            '  ```',
+            '> [!IMPORTANT]',
+            '> **Sometimes, the latest version of innounp may not support unpacking the latest Inno Setup packages.**',
+            '> **You might need to wait for an upstream update of innounp.**',
+            '> See: https://github.com/jrathlev/InnoUnpacker-Windows-GUI?tab=readme-ov-file#inspect-and-unpack-innosetup-archives'
         )
         'dark'    = @(
             '- WiX package decompression/extraction error',
@@ -138,7 +136,11 @@ function Show-ExtractionHelpTips {
         '- ...',
         '',
         'If the problem persists, please keep this issue open and paste the log content from the failed installation, if available.',
-        'This will help us diagnose and resolve the issue more effectively.'
+        'This will help us diagnose and resolve the issue more effectively.',
+        '> [!WARNING]',
+        '> If you are using an unofficial Scoop-Core with an official bucket,',
+        '> the decompress error may be caused by significant differences between the official and unofficial cores.',
+        '> In this case, please try switching to the official [Scoop-Core](https://github.com/ScoopInstaller/Scoop) instead.'
     )
 
     $tipContent = @()
