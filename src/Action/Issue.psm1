@@ -90,6 +90,7 @@ function Test-Hash {
         } else {
             # Check if default branch is protected
             if (((Invoke-GithubRequest "repos/$REPOSITORY/branches/$masterBranch").Content | ConvertFrom-Json).protected) {
+                Write-Log 'The default branch is protected. PR will be created.'
                 Write-Log 'PR - Create new branch and post PR'
 
                 $branch = "$manifestNameAsInBucket-hash-fix-$(Get-Random -Maximum 258258258)"
