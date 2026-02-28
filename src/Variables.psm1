@@ -1,3 +1,38 @@
+function Initialize-PreferenceVariable {
+    <#
+    .SYNOPSIS
+        Initializes PowerShell preference variables based on environment variables or default values.
+    #>
+
+    $DefaultPreferences = [ordered]@{
+        # Set ErrorActionPreference first and prevent it from being overridden by the environment variable.
+        ErrorActionPreference = @{ Value = 'Continue'; IgnoreEnv = $true }
+        DebugPreference       = @{ Value = 'SilentlyContinue' }
+        InformationPreference = @{ Value = 'SilentlyContinue' }
+        VerbosePreference     = @{ Value = 'SilentlyContinue' }
+        WarningPreference     = @{ Value = 'Continue' }
+    }
+
+    foreach ($Name in $DefaultPreferences.Keys) {
+        $Preference = $DefaultPreferences[$Name]
+        $Value = $Preference.Value
+
+        $EnvValue = Get-Item "Env:$Name" -ErrorAction Ignore | Select-Object -ExpandProperty Value
+
+        if ((-not $Preference.IgnoreEnv) -and ($EnvValue)) {
+            $Value = $EnvValue
+        }
+
+        # Use built-in output functions instead of Write-Log here to avoid dependency issues
+        Write-Host "Setting $Name to $Value ..."
+
+        Set-Variable -Name $Name -Value $Value -Scope Global
+    }
+}
+
+# Initialize PowerShell Preference Variables
+Initialize-PreferenceVariable
+
 # Environment
 $env:SCOOP = Join-Path $env:USERPROFILE 'SCOOP'
 $env:SCOOP_HOME = Join-Path $env:SCOOP 'apps\scoop\current'

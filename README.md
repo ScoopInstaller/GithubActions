@@ -25,6 +25,15 @@ Set of automated actions, which bucket maintainers can use to save time managing
 1. `SPECIAL_SNOWFLAKES`
     - String
     - List of manifest names joined with `,` used as parameter for auto-pr utility.
+1. [PowerShell Preference Variables](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_preference_variables)
+    - If an environment variable with the same name as the following PowerShell preference variable exists, its value will be assigned to the corresponding PowerShell preference variable:
+
+    | Name                                                         | Type   | Default Value        |
+    | ------------------------------------------------------------ | ------ | -------------------- |
+    | [DebugPreference](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_preference_variables?view=powershell-7.5#debugpreference) | String | `'SilentlyContinue'` |
+    | [InformationPreference](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_preference_variables?view=powershell-7.5#informationpreference) | String | `'SilentlyContinue'` |
+    | [VerbosePreference](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_preference_variables?view=powershell-7.5#verbosepreference) | String | `'SilentlyContinue'` |
+    | [WarningPreference](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_preference_variables?view=powershell-7.5#warningpreference) | String | `'Continue'`         |
 
 ## Available actions
 
