@@ -1,5 +1,189 @@
 Join-Path $PSScriptRoot 'Helpers.psm1' | Import-Module
 
+function Invoke-GithubGraphQL {
+    <#
+    .SYNOPSIS
+        Invoke authenticated GitHub GraphQL API request with parallel query support and fallback.
+    .PARAMETER Query
+        GraphQL query string.
+    .PARAMETER Variables
+        Hashtable of variables for the GraphQL query.
+    .PARAMETER UseFallback
+        If set, falls back to REST API on GraphQL failure.
+    .PARAMETER MaxRetries
+        Maximum number of retry attempts on rate limit. Default is 3.
+    .EXAMPLE
+        Invoke-GithubGraphQL -Query 'query { viewer { login } }'
+    #>
+    param(
+        [Parameter(Mandatory, ValueFromPipeline)]
+        [String] $Query,
+        [Hashtable] $Variables,
+        [Switch] $UseFallback,
+        [Int] $MaxRetries = 3
+    )
+
+    $graphqlUrl = 'https://api.github.com/graphql'
+    $retryCount = 0
+    $success = $false
+    $response = $null
+
+    while ($retryCount -lt $MaxRetries -and -not $success) {
+        try {
+            $body = @{
+                'query' = $Query
+            }
+            if ($Variables) {
+                $body['variables'] = $Variables
+            }
+
+            $parameters = @{
+                'Headers' = @{
+                    'Authorization' = "Bearer $env:GITHUB_TOKEN"
+                    'Accept' = 'application/json'
+                }
+                'Method' = 'Post'
+                'Uri' = $graphqlUrl
+                'Body' = (ConvertTo-Json $body -Depth 10)
+                'ContentType' = 'application/json'
+            }
+
+            Write-Log 'GraphQL Request' $parameters.Uri
+            Write-Log 'GraphQL Query' $Query
+
+            $response = Invoke-WebRequest @parameters
+            $content = $response.Content | ConvertFrom-Json
+
+            if ($content.errors) {
+                Write-Log 'GraphQL Errors' ($content.errors | ConvertTo-Json -Depth 10)
+
+                # Check for rate limit errors
+                $isRateLimit = $content.errors | Where-Object { $_.type -eq 'RATE_LIMITED' }
+                if ($isRateLimit) {
+                    $retryCount++
+                    if ($retryCount -lt $MaxRetries) {
+                        $waitTime = [Math]::Pow(2, $retryCount) * 3
+                        Write-Log "Rate limit hit, waiting $waitTime seconds before retry ($retryCount/$MaxRetries)"
+                        Start-Sleep -Seconds $waitTime
+                        continue
+                    } else {
+                        throw "Rate limit exceeded after $MaxRetries retries"
+                    }
+                }
+
+                throw "GraphQL query failed: $($content.errors[0].message)"
+            }
+
+            $env:GH_REQUEST_COUNTER = ([int] $env:GH_REQUEST_COUNTER) + 1
+            $success = $true
+
+            return $response
+        } catch {
+            Write-Log "GraphQL request failed: $($_.Exception.Message)"
+
+            $retryCount++
+            if ($retryCount -lt $MaxRetries -and $_.Exception.Message -match 'rate limit|timeout|temporary') {
+                $waitTime = [Math]::Pow(2, $retryCount) * 3
+                Write-Log "Retrying in $waitTime seconds..."
+                Start-Sleep -Seconds $waitTime
+            } else {
+                throw
+            }
+        }
+    }
+
+    if (-not $success) {
+        throw "GraphQL request failed after $MaxRetries retries: $($response | Out-String)"
+    }
+}
+
+function Invoke-GithubGraphQLParallel {
+    <#
+    .SYNOPSIS
+        Execute multiple GraphQL queries in parallel to avoid rate limits.
+    .PARAMETER Queries
+        Array of hashtables containing Query and Variables.
+    .PARAMETER UseFallback
+        If set, falls back to REST API on GraphQL failure.
+    .EXAMPLE
+        $queries = @(
+            @{ Query = 'query($owner:String!, $name:String!) { repository(owner:$owner, name:$name) { defaultBranch } }'; Variables = @{ owner = 'octocat'; name = 'Hello-World' } }
+        )
+        Invoke-GithubGraphQLParallel -Queries $queries
+    #>
+    param(
+        [Parameter(Mandatory)]
+        [Hashtable[]] $Queries,
+        [Switch] $UseFallback
+    )
+
+    $results = @()
+    $errors = @()
+
+    # Use Runspaces for parallel execution
+    $runspacePool = [runspacefactory]::CreateRunspacePool(1, [Math]::Min(5, $Queries.Count))
+    $runspacePool.Open()
+
+    $jobs = @()
+    foreach ($q in $Queries) {
+        $powershell = [powershell]::Create()
+        $powershell.RunspacePool = $runspacePool
+        $powershell.AddScript({
+            param($Query, $Variables, $Token)
+            $env:GITHUB_TOKEN = $Token
+            $body = @{ 'query' = $Query }
+            if ($Variables) { $body['variables'] = $Variables }
+
+            $parameters = @{
+                'Headers' = @{ 'Authorization' = "Bearer $Token" }
+                'Method' = 'Post'
+                'Uri' = 'https://api.github.com/graphql'
+                'Body' = (ConvertTo-Json $body -Depth 10)
+                'ContentType' = 'application/json'
+            }
+
+            try {
+                $response = Invoke-WebRequest @parameters
+                $env:GH_REQUEST_COUNTER = ([int] $env:GH_REQUEST_COUNTER) + 1
+                return @{ Success = $true; Data = $response }
+            } catch {
+                return @{ Success = $false; Error = $_.Exception.Message }
+            }
+        }).AddArgument($q.Query).AddArgument($q.Variables).AddArgument($env:GITHUB_TOKEN) > $null
+
+        $jobs += @{
+            PowerShell = $powershell
+            AsyncResult = $powershell.BeginInvoke()
+            Query = $q
+        }
+    }
+
+    foreach ($job in $jobs) {
+        try {
+            $result = $job.PowerShell.EndInvoke($job.AsyncResult)
+            if ($result.Success) {
+                $results += $result.Data
+            } else {
+                Write-Log "Parallel query failed: $($result.Error)"
+                $errors += @{ Query = $job.Query; Error = $result.Error }
+            }
+        } finally {
+            $job.PowerShell.Dispose()
+        }
+    }
+
+    $runspacePool.Close()
+    $runspacePool.Dispose()
+
+    if ($errors.Count -gt 0 -and $UseFallback) {
+        Write-Log "Some GraphQL queries failed, falling back to REST API"
+        return @{ Results = $results; Errors = $errors; FallbackUsed = $true }
+    }
+
+    return @{ Results = $results; Errors = $errors; FallbackUsed = $false }
+}
+
+
 function Invoke-GithubRequest {
     <#
     .SYNOPSIS
@@ -313,5 +497,5 @@ function Get-LogURL {
     return $logURL
 }
 
-Export-ModuleMember -Function Invoke-GithubRequest, Add-Comment, Get-AllChangedFilesInPR, New-Issue, Close-Issue, `
+Export-ModuleMember -Function Invoke-GithubRequest, Invoke-GithubGraphQL, Invoke-GithubGraphQLParallel, Add-Comment, Get-AllChangedFilesInPR, New-Issue, Close-Issue, ` 
     Add-Label, Remove-Label, Get-RateLimit, Get-JobID, Get-LogURL
