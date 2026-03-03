@@ -143,7 +143,6 @@ function Test-Hash {
             } catch {
                 Write-Log "Failed to check branch protection status: $($_.Exception.Message). Assuming branch is protected for safety."
                 $isProtected = $true
-                $isProtected = $false
             }
 
             if ($isProtected) {

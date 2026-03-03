@@ -111,9 +111,6 @@ function Invoke-GithubGraphQLParallel {
         [Hashtable[]] $Queries
     )
 
-    $results = @()
-    $errors = @()
-
     # Early return for empty or null queries
     if ($null -eq $Queries -or $Queries.Count -eq 0) {
         return @{ Results = @(); Errors = @(); FallbackUsed = $false }
@@ -121,19 +118,6 @@ function Invoke-GithubGraphQLParallel {
 
     $results = @()
     $errors = @()
-
-    # Early return for empty queries
-    if ($Queries.Count -eq 0) {
-        return @{ Results = @(); Errors = @(); FallbackUsed = $false }
-    }
-
-    # Use Runspaces for parallel execution
-    $runspacePool = [runspacefactory]::CreateRunspacePool(1, [Math]::Min(5, $Queries.Count))
-
-    $results = @()
-    $errors = @()
-
-    # Use Runspaces for parallel execution
     $runspacePool = [runspacefactory]::CreateRunspacePool(1, [Math]::Min(5, $Queries.Count))
     $runspacePool.Open()
 
@@ -174,11 +158,13 @@ function Invoke-GithubGraphQLParallel {
         }
     }
 
+    $successfulCount = 0
     foreach ($job in $jobs) {
         try {
             $result = $job.PowerShell.EndInvoke($job.AsyncResult)
             if ($result.Success) {
                 $results += $result.Data
+                $successfulCount++
             } else {
                 Write-Log "Parallel query failed: $($result.Error)"
                 $errors += @{ Query = $job.Query; Error = $result.Error }
@@ -189,7 +175,7 @@ function Invoke-GithubGraphQLParallel {
     }
 
     # Update parent process counter after all runspaces complete
-    $env:GH_REQUEST_COUNTER = ([int]$env:GH_REQUEST_COUNTER) + $results.Count
+    $env:GH_REQUEST_COUNTER = ([int]$env:GH_REQUEST_COUNTER) + $successfulCount
 
     $runspacePool.Close()
     $runspacePool.Dispose()
