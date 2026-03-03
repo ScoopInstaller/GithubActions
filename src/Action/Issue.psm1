@@ -61,16 +61,16 @@ function Test-Hash {
 
         Add-Comment -ID $IssueID -Message $message -AppendLogLink
     } else {
-        Write-Log 'Hash mismatch confirmed.'
-
-        $masterBranch = ((Invoke-GithubRequest "repos/$REPOSITORY").Content | ConvertFrom-Json).default_branch
+        $titleToBePosted = "$manifestNameAsInBucket@$($man.version): Fix hash"
         $message = @('You are right. Thank you for reporting.')
         # TODO: Post labels at the end of function
         Add-Label -ID $IssueID -Label 'verified', 'hash-fix-needed'
-        $prs = (Invoke-GithubRequest "repos/$REPOSITORY/pulls?state=open&base=$masterBranch&sorting=updated").Content | ConvertFrom-Json
-        $titleToBePosted = "$manifestNameAsInBucket@$($man.version): Fix hash"
-        $prs = $prs | Where-Object { $_.title -eq $titleToBePosted }
 
+        # Use GraphQL to get repository info and PRs in a single query
+        $repoInfo = Get-RepositoryInfoAndPRs -PRTitle $titleToBePosted
+        $prs = $repoInfo.prs
+        $masterBranch = $repoInfo.defaultBranch
+        $isProtected = $repoInfo.isProtected
         # There is alreay PR for
         if ($prs.Count -gt 0) {
             Write-Log 'PR - Update description'
@@ -89,7 +89,7 @@ function Test-Hash {
             Add-Label -ID $IssueID -Label 'duplicate'
         } else {
             # Check if default branch is protected
-            if (((Invoke-GithubRequest "repos/$REPOSITORY/branches/$masterBranch").Content | ConvertFrom-Json).protected) {
+            if ($isProtected) {
                 Write-Log 'PR - Create new branch and post PR'
 
                 $branch = "$manifestNameAsInBucket-hash-fix-$(Get-Random -Maximum 258258258)"

@@ -41,6 +41,53 @@ function Invoke-GithubRequest {
     return Invoke-WebRequest @parameters
 }
 
+function Invoke-GithubGraphQL {
+    <#
+    .SYNOPSIS
+        Invoke authenticated GitHub GraphQL API request.
+    .PARAMETER Query
+        GraphQL query string.
+    .PARAMETER Variables
+        Variables to be used in the query.
+    .EXAMPLE
+        Invoke-GithubGraphQL -Query 'query { viewer { login } }'
+    #>
+    param(
+        [Parameter(Mandatory, ValueFromPipeline)]
+        [String] $Query,
+        [Hashtable] $Variables
+    )
+
+    $body = @{
+        'query' = $Query
+    }
+    if ($Variables) {
+        $body.Add('variables', (ConvertTo-Json $Variables -Depth 8 -Compress))
+    }
+
+    $parameters = @{
+        'Headers' = @{
+            'Authorization' = "Bearer $env:GITHUB_TOKEN"
+            'Accept' = 'application/vnd.github.v3+json'
+        }
+        'Method'  = 'Post'
+        'Uri'     = 'https://api.github.com/graphql'
+        'Body'    = (ConvertTo-Json $body -Depth 8 -Compress)
+    }
+
+    Write-Log 'GraphQL Request' @{ 'query' = $Query; 'variables' = $Variables }
+    $env:GH_REQUEST_COUNTER = ([int] $env:GH_REQUEST_COUNTER) + 1
+
+    $response = Invoke-WebRequest @parameters
+    $content = $response.Content | ConvertFrom-Json
+
+    if ($content.errors) {
+        throw "GraphQL errors: $($content.errors | ConvertTo-Json -Compress)"
+    }
+
+    return $content.data
+}
+
 function Add-Comment {
     <#
     .SYNOPSIS
@@ -71,8 +118,7 @@ function Add-Comment {
 function Get-AllChangedFilesInPR {
     <#
     .SYNOPSIS
-        Get all changed files inside pull request.
-        https://developer.github.com/v3/pulls/#list-pull-requests-files
+        Get all changed files inside pull request using GraphQL API.
     .PARAMETER ID
         ID of pull request.
     .PARAMETER Filter
@@ -83,18 +129,56 @@ function Get-AllChangedFilesInPR {
         [Int] $ID,
         [Switch] $Filter
     )
-    $filesno = ((Invoke-GithubRequest -Query "repos/$REPOSITORY/pulls/$ID").Content | ConvertFrom-Json).changed_files
-    if ($filesno -le 100) {
-        $files = (Invoke-GithubRequest -Query "repos/$REPOSITORY/pulls/$ID/files?per_page=$filesno").Content | ConvertFrom-Json
-    } else {
-        $files = @()
-        for ($i = 1; $i -lt ($filesno / 100) + 1; $i++) {
-            $files += (Invoke-GithubRequest -Query "repos/$REPOSITORY/pulls/$ID/files?per_page=100&page=$i").Content | ConvertFrom-Json
+
+    $owner, $name = $REPOSITORY -split '/'
+
+    $query = @'
+query ($owner: String!, $name: String!, $number: Int!, $cursor: String) {
+  repository(owner: $owner, name: $name) {
+    pullRequest(number: $number) {
+      files(first: 100, after: $cursor) {
+        pageInfo {
+          hasNextPage
+          endCursor
         }
+        nodes {
+          path
+          status
+        }
+      }
     }
+  }
+}
+'@
+
+    $files = @()
+    $cursor = $null
+
+    do {
+        $variables = @{
+            owner = $owner
+            name = $name
+            number = $ID
+            cursor = $cursor
+        }
+
+        $data = Invoke-GithubGraphQL -Query $query -Variables $variables
+        $pageData = $data.repository.pullRequest.files
+
+        $files += $pageData.nodes | ForEach-Object {
+            [PSCustomObject]@{
+                filename = $_.path
+                status = $_.status
+            }
+        }
+
+        $cursor = $pageData.pageInfo.endCursor
+        $hasNextPage = $pageData.pageInfo.hasNextPage
+    } while ($hasNextPage)
+
     if ($Filter) { $files = $files | Where-Object { $_.status -ne 'removed' } }
 
-    return $files | Select-Object -Property filename, status
+    return $files
 }
 
 function New-Issue {
@@ -149,6 +233,76 @@ function Close-Issue {
     return Invoke-GithubRequest -Query "repos/$REPOSITORY/issues/$ID" -Method Patch -Body @{ 'state' = 'closed' }
 }
 
+function Get-RepositoryInfoAndPRs {
+    <#
+    .SYNOPSIS
+        Get repository default branch, branch protection status, and PRs in a single GraphQL query.
+    .PARAMETER PRTitle
+        PR title to filter.
+    #>
+    param(
+        [String] $PRTitle
+    )
+
+    $owner, $name = $REPOSITORY -split '/'
+
+    $query = @'
+query ($owner: String!, $name: String!) {
+  repository(owner: $owner, name: $name) {
+    defaultBranchRef {
+      name
+    }
+    branchProtectionRules(first: 10) {
+      nodes {
+        pattern
+        isAdminEnforced
+      }
+    }
+    pullRequests(states: OPEN, first: 100, orderBy: {field: UPDATED_AT, direction: DESC}) {
+      nodes {
+        number
+        title
+        body
+        baseRefName
+      }
+    }
+  }
+}
+'@
+    $variables = @{
+        owner = $owner
+        name = $name
+    }
+
+    $data = Invoke-GithubGraphQL -Query $query -Variables $variables
+    $repo = $data.repository
+
+    $defaultBranch = $repo.defaultBranchRef.name
+
+    $result = @{
+        defaultBranch = $defaultBranch
+    }
+
+    # Check if default branch is protected by matching protection rules
+    $branchProtectionRules = $repo.branchProtectionRules.nodes
+    $isProtected = $false
+    foreach ($rule in $branchProtectionRules) {
+        if ($defaultBranch -like $rule.pattern) {
+            $isProtected = $true
+            break
+        }
+    }
+    $result.isProtected = $isProtected
+    $defaultBranchPRs = $repo.pullRequests.nodes | Where-Object { $_.baseRefName -eq $defaultBranch }
+
+    if ($PRTitle) {
+        $result.prs = $defaultBranchPRs | Where-Object { $_.title -eq $PRTitle }
+    } else {
+        $result.prs = $defaultBranchPRs
+    }
+
+    return $result
+}
 function Add-Label {
     <#
     .SYNOPSIS
@@ -313,5 +467,5 @@ function Get-LogURL {
     return $logURL
 }
 
-Export-ModuleMember -Function Invoke-GithubRequest, Add-Comment, Get-AllChangedFilesInPR, New-Issue, Close-Issue, `
-    Add-Label, Remove-Label, Get-RateLimit, Get-JobID, Get-LogURL
+Export-ModuleMember -Function Invoke-GithubRequest, Invoke-GithubGraphQL, Add-Comment, Get-AllChangedFilesInPR, New-Issue, Close-Issue, `
+    Add-Label, Remove-Label, Get-RateLimit, Get-JobID, Get-LogURL, Get-RepositoryInfoAndPRs
