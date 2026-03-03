@@ -159,26 +159,29 @@ function Invoke-GithubGraphQLParallel {
     }
 
     $successfulCount = 0
-    foreach ($job in $jobs) {
-        try {
-            $result = $job.PowerShell.EndInvoke($job.AsyncResult)
-            if ($result.Success) {
-                $results += $result.Data
-                $successfulCount++
-            } else {
-                Write-Log "Parallel query failed: $($result.Error)"
-                $errors += @{ Query = $job.Query; Error = $result.Error }
+    try {
+        foreach ($job in $jobs) {
+            try {
+                $result = $job.PowerShell.EndInvoke($job.AsyncResult)
+                if ($result.Success) {
+                    $results += $result.Data
+                    $successfulCount++
+                } else {
+                    Write-Log "Parallel query failed: $($result.Error)"
+                    $errors += @{ Query = $job.Query; Error = $result.Error }
+                }
+            } finally {
+                $job.PowerShell.Dispose()
             }
-        } finally {
-            $job.PowerShell.Dispose()
         }
+
+        # Update parent process counter after all runspaces complete
+        $env:GH_REQUEST_COUNTER = ([int]$env:GH_REQUEST_COUNTER) + $successfulCount
+    } finally {
+        $runspacePool.Close()
+        $runspacePool.Dispose()
     }
 
-    # Update parent process counter after all runspaces complete
-    $env:GH_REQUEST_COUNTER = ([int]$env:GH_REQUEST_COUNTER) + $successfulCount
-
-    $runspacePool.Close()
-    $runspacePool.Dispose()
 
     if ($errors.Count -gt 0) {
         Write-Log "Some GraphQL queries failed with errors: $($errors.Count)"

@@ -114,7 +114,14 @@ function Test-Hash {
             $prs = (Invoke-GithubRequest "repos/$REPOSITORY/pulls?state=open&base=$masterBranch&sort=updated").Content | ConvertFrom-Json
         }
 
-        $message = @('You are right. Thank you for reporting.')
+$message = @('You are right. Thank you for reporting.')
+        # TODO: Post labels at the end of function
+        Add-Label -ID $IssueID -Label 'verified', 'hash-fix-needed'
+        $titleToBePosted = "$manifestNameAsInBucket@$($man.version): Fix hash"
+        $prs = $prs | Where-Object {
+            $_.title -eq $titleToBePosted -and
+            (($_.baseRefName -eq $masterBranch) -or ($_.base.ref -eq $masterBranch))
+        }
         # TODO: Post labels at the end of function
         Add-Label -ID $IssueID -Label 'verified', 'hash-fix-needed'
         $prs = $prs | Where-Object { $_.title -eq $titleToBePosted -and $_.baseRefName -eq $masterBranch }
