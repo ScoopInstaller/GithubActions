@@ -81,6 +81,7 @@ function Test-Hash {
                 body
                 baseRefName
               }
+            }
           }
           rateLimit {
             remaining

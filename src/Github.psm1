@@ -3,20 +3,18 @@ Join-Path $PSScriptRoot 'Helpers.psm1' | Import-Module
 function Invoke-GithubGraphQL {
     <#
     .SYNOPSIS
-        Invoke authenticated GitHub GraphQL API request with parallel query support and fallback.
+        Invoke authenticated GitHub GraphQL API request with retry logic.
     .PARAMETER Query
         GraphQL query string.
     .PARAMETER Variables
         Hashtable of variables for the GraphQL query.
-    .PARAMETER UseFallback
-        If set, falls back to REST API on GraphQL failure.
     .PARAMETER MaxRetries
         Maximum number of retry attempts on rate limit. Default is 3.
     .EXAMPLE
         Invoke-GithubGraphQL -Query 'query { viewer { login } }'
     #>
     param(
-        [Parameter(Mandatory, ValueFromPipeline)]
+        [Parameter(Mandatory)]
         [String] $Query,
         [Hashtable] $Variables,
         [Int] $MaxRetries = 3
@@ -102,8 +100,6 @@ function Invoke-GithubGraphQLParallel {
         Execute multiple GraphQL queries in parallel to avoid rate limits.
     .PARAMETER Queries
         Array of hashtables containing Query and Variables.
-    .PARAMETER UseFallback
-        If set, falls back to REST API on GraphQL failure.
     .EXAMPLE
         $queries = @(
             @{ Query = 'query($owner:String!, $name:String!) { repository(owner:$owner, name:$name) { defaultBranch } }'; Variables = @{ owner = 'octocat'; name = 'Hello-World' } }
@@ -111,10 +107,28 @@ function Invoke-GithubGraphQLParallel {
         Invoke-GithubGraphQLParallel -Queries $queries
     #>
     param(
-        [Parameter(Mandatory)]
-        [Hashtable[]] $Queries,
-        [Switch] $UseFallback
+        [AllowEmptyCollection()]
+        [Hashtable[]] $Queries
     )
+
+    $results = @()
+    $errors = @()
+
+    # Early return for empty or null queries
+    if ($null -eq $Queries -or $Queries.Count -eq 0) {
+        return @{ Results = @(); Errors = @(); FallbackUsed = $false }
+    }
+
+    $results = @()
+    $errors = @()
+
+    # Early return for empty queries
+    if ($Queries.Count -eq 0) {
+        return @{ Results = @(); Errors = @(); FallbackUsed = $false }
+    }
+
+    # Use Runspaces for parallel execution
+    $runspacePool = [runspacefactory]::CreateRunspacePool(1, [Math]::Min(5, $Queries.Count))
 
     $results = @()
     $errors = @()
@@ -180,9 +194,8 @@ function Invoke-GithubGraphQLParallel {
     $runspacePool.Close()
     $runspacePool.Dispose()
 
-    if ($errors.Count -gt 0 -and $UseFallback) {
-        Write-Log "Some GraphQL queries failed, falling back to REST API"
-        return @{ Results = $results; Errors = $errors; FallbackUsed = $true }
+    if ($errors.Count -gt 0) {
+        Write-Log "Some GraphQL queries failed with errors: $($errors.Count)"
     }
 
     return @{ Results = $results; Errors = $errors; FallbackUsed = $false }
