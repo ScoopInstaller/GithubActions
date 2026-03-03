@@ -79,8 +79,8 @@ function Test-Hash {
                 number
                 title
                 body
+                baseRefName
               }
-            }
           }
           rateLimit {
             remaining
@@ -116,7 +116,7 @@ function Test-Hash {
         $message = @('You are right. Thank you for reporting.')
         # TODO: Post labels at the end of function
         Add-Label -ID $IssueID -Label 'verified', 'hash-fix-needed'
-        $prs = $prs | Where-Object { $_.title -eq $titleToBePosted }
+        $prs = $prs | Where-Object { $_.title -eq $titleToBePosted -and $_.baseRefName -eq $masterBranch }
 
         # There is alreay PR for
         if ($prs.Count -gt 0) {
@@ -140,7 +140,8 @@ function Test-Hash {
             try {
                 $isProtected = ((Invoke-GithubRequest "repos/$REPOSITORY/branches/$masterBranch").Content | ConvertFrom-Json).protected
             } catch {
-                Write-Log "Failed to check branch protection status: $($_.Exception.Message)"
+                Write-Log "Failed to check branch protection status: $($_.Exception.Message). Assuming branch is protected for safety."
+                $isProtected = $true
                 $isProtected = $false
             }
 

@@ -143,7 +143,10 @@ function Invoke-GithubGraphQLParallel {
 
             try {
                 $response = Invoke-WebRequest @parameters
-                return @{ Success = $true; Data = $response }
+                $payload = $response.Content | ConvertFrom-Json
+                if ($payload.errors) {
+                    return @{ Success = $false; Error = ($payload.errors | ConvertTo-Json -Depth 10) }
+                }
                 return @{ Success = $true; Data = $response }
             } catch {
                 return @{ Success = $false; Error = $_.Exception.Message }
