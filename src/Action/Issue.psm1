@@ -1,5 +1,8 @@
 Join-Path $PSScriptRoot '..\Helpers.psm1' | Import-Module
+Join-Path $PSScriptRoot '..\Github.psm1' | Import-Module
 Join-Path $PSScriptRoot 'Issue' | Get-ChildItem -Filter '*.psm1' | Select-Object -ExpandProperty Fullname | Import-Module
+
+
 
 function Test-Hash {
     param (
@@ -63,13 +66,63 @@ function Test-Hash {
     } else {
         Write-Log 'Hash mismatch confirmed.'
 
-        $masterBranch = ((Invoke-GithubRequest "repos/$REPOSITORY").Content | ConvertFrom-Json).default_branch
-        $message = @('You are right. Thank you for reporting.')
+        # Use GraphQL to fetch repository info and PRs in parallel
+        $owner, $repo = $REPOSITORY -split '/'
+        $graphqlQuery = @"
+        query(`$owner:String!, `$repo:String!) {
+          repository(owner:`$owner, name:`$repo) {
+            defaultBranchRef {
+              name
+            }
+            pullRequests(states:OPEN, first:100, orderBy:{field:UPDATED_AT, direction:DESC}) {
+              nodes {
+                number
+                title
+                body
+                baseRefName
+              }
+            }
+          }
+          rateLimit {
+            remaining
+          }
+        }
+"@
+
+        $masterBranch = $null
+        $prs = $null
+
+        try {
+            Write-Log 'Attempting GraphQL query for repository and PRs...'
+            $response = Invoke-GithubGraphQL -Query $graphqlQuery -Variables @{
+                owner = $owner
+                repo = $repo
+            }
+
+            $content = $response.Content | ConvertFrom-Json
+            if ($content.data -and $content.data.repository) {
+                $masterBranch = $content.data.repository.defaultBranchRef.name
+                $prs = $content.data.repository.pullRequests.nodes
+                Write-Log "GraphQL query succeeded. Remaining rate limit: $($content.data.rateLimit.remaining)"
+            } else {
+                throw 'GraphQL returned no data'
+            }
+        } catch {
+            Write-Log "GraphQL query failed, falling back to REST API: $($_.Exception.Message)"
+            # Fallback to REST API
+            $masterBranch = ((Invoke-GithubRequest "repos/$REPOSITORY").Content | ConvertFrom-Json).default_branch
+            $prs = (Invoke-GithubRequest "repos/$REPOSITORY/pulls?state=open&base=$masterBranch&sort=updated").Content | ConvertFrom-Json
+        }
+
+$message = @('You are right. Thank you for reporting.')
         # TODO: Post labels at the end of function
         Add-Label -ID $IssueID -Label 'verified', 'hash-fix-needed'
-        $prs = (Invoke-GithubRequest "repos/$REPOSITORY/pulls?state=open&base=$masterBranch&sorting=updated").Content | ConvertFrom-Json
         $titleToBePosted = "$manifestNameAsInBucket@$($man.version): Fix hash"
-        $prs = $prs | Where-Object { $_.title -eq $titleToBePosted }
+        $prs = $prs | Where-Object {
+            $_.title -eq $titleToBePosted -and
+            (($_.baseRefName -eq $masterBranch) -or ($_.base.ref -eq $masterBranch))
+        }
+
 
         # There is alreay PR for
         if ($prs.Count -gt 0) {
@@ -88,9 +141,16 @@ function Test-Hash {
             Invoke-GithubRequest "repos/$REPOSITORY/pulls/$prID" -Method Patch -Body @{ 'body' = (@("- Closes #$IssueID", $pr.body) -join "`r`n") }
             Add-Label -ID $IssueID -Label 'duplicate'
         } else {
-            # Check if default branch is protected
-            if (((Invoke-GithubRequest "repos/$REPOSITORY/branches/$masterBranch").Content | ConvertFrom-Json).protected) {
-                Write-Log 'PR - Create new branch and post PR'
+            # Check if default branch is protected (need REST API for this as GraphQL doesn't expose it)
+            $isProtected = $false
+            try {
+                $isProtected = ((Invoke-GithubRequest "repos/$REPOSITORY/branches/$masterBranch").Content | ConvertFrom-Json).protected
+            } catch {
+                Write-Log "Failed to check branch protection status: $($_.Exception.Message). Assuming branch is protected for safety."
+                $isProtected = $true
+            }
+
+            if ($isProtected) {
 
                 $branch = "$manifestNameAsInBucket-hash-fix-$(Get-Random -Maximum 258258258)"
 
