@@ -19,7 +19,6 @@ function Invoke-GithubGraphQL {
         [Parameter(Mandatory, ValueFromPipeline)]
         [String] $Query,
         [Hashtable] $Variables,
-        [Switch] $UseFallback,
         [Int] $MaxRetries = 3
     )
 
@@ -144,7 +143,7 @@ function Invoke-GithubGraphQLParallel {
 
             try {
                 $response = Invoke-WebRequest @parameters
-                $env:GH_REQUEST_COUNTER = ([int] $env:GH_REQUEST_COUNTER) + 1
+                return @{ Success = $true; Data = $response }
                 return @{ Success = $true; Data = $response }
             } catch {
                 return @{ Success = $false; Error = $_.Exception.Message }
@@ -171,6 +170,9 @@ function Invoke-GithubGraphQLParallel {
             $job.PowerShell.Dispose()
         }
     }
+
+    # Update parent process counter after all runspaces complete
+    $env:GH_REQUEST_COUNTER = ([int]$env:GH_REQUEST_COUNTER) + $results.Count
 
     $runspacePool.Close()
     $runspacePool.Dispose()
@@ -497,5 +499,5 @@ function Get-LogURL {
     return $logURL
 }
 
-Export-ModuleMember -Function Invoke-GithubRequest, Invoke-GithubGraphQL, Invoke-GithubGraphQLParallel, Add-Comment, Get-AllChangedFilesInPR, New-Issue, Close-Issue, ` 
+Export-ModuleMember -Function Invoke-GithubRequest, Invoke-GithubGraphQL, Invoke-GithubGraphQLParallel, Add-Comment, Get-AllChangedFilesInPR, New-Issue, Close-Issue, `
     Add-Label, Remove-Label, Get-RateLimit, Get-JobID, Get-LogURL

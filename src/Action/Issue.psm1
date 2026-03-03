@@ -1,43 +1,8 @@
 Join-Path $PSScriptRoot '..\Helpers.psm1' | Import-Module
+Join-Path $PSScriptRoot '..\Github.psm1' | Import-Module
 Join-Path $PSScriptRoot 'Issue' | Get-ChildItem -Filter '*.psm1' | Select-Object -ExpandProperty Fullname | Import-Module
 
-function Invoke-GithubGraphQLQuery {
-    <#
-    .SYNOPSIS
-        Execute a GraphQL query to GitHub API.
-    .PARAMETER Query
-        GraphQL query string.
-    .PARAMETER Variables
-        Hashtable of variables for the query.
-    #>
-    param(
-        [Parameter(Mandatory)]
-        [String] $Query,
-        [Hashtable] $Variables
-    )
 
-    $graphqlUrl = 'https://api.github.com/graphql'
-    $body = @{ 'query' = $Query }
-    if ($Variables) { $body['variables'] = $Variables }
-
-    $parameters = @{
-        'Headers' = @{
-            'Authorization' = "Bearer $env:GITHUB_TOKEN"
-            'Accept' = 'application/json'
-        }
-        'Method' = 'Post'
-        'Uri' = $graphqlUrl
-        'Body' = (ConvertTo-Json $body -Depth 10)
-        'ContentType' = 'application/json'
-    }
-
-    Write-Log 'GraphQL Request' $parameters.Uri
-
-    $response = Invoke-WebRequest @parameters
-    $env:GH_REQUEST_COUNTER = ([int] $env:GH_REQUEST_COUNTER) + 1
-
-    return $response
-}
 
 function Test-Hash {
     param (
@@ -128,7 +93,7 @@ function Test-Hash {
 
         try {
             Write-Log 'Attempting GraphQL query for repository and PRs...'
-            $response = Invoke-GithubGraphQLQuery -Query $graphqlQuery -Variables @{
+            $response = Invoke-GithubGraphQL -Query $graphqlQuery -Variables @{
                 owner = $owner
                 repo = $repo
             }
@@ -145,7 +110,7 @@ function Test-Hash {
             Write-Log "GraphQL query failed, falling back to REST API: $($_.Exception.Message)"
             # Fallback to REST API
             $masterBranch = ((Invoke-GithubRequest "repos/$REPOSITORY").Content | ConvertFrom-Json).default_branch
-            $prs = (Invoke-GithubRequest "repos/$REPOSITORY/pulls?state=open&base=$masterBranch&sorting=updated").Content | ConvertFrom-Json
+            $prs = (Invoke-GithubRequest "repos/$REPOSITORY/pulls?state=open&base=$masterBranch&sort=updated").Content | ConvertFrom-Json
         }
 
         $message = @('You are right. Thank you for reporting.')
