@@ -205,7 +205,7 @@ function Invoke-GithubRequest {
         Invoke-GithubRequest 'repos/User/Repo/pulls' -Method 'Post' -Body @{ 'body' = 'body' }
     #>
     param(
-        [Parameter(Mandatory, ValueFromPipeline)]
+        [Parameter(Mandatory)]
         [String] $Query,
         [Microsoft.PowerShell.Commands.WebRequestMethod] $Method = 'Get',
         [Hashtable] $Body

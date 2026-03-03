@@ -122,9 +122,7 @@ $message = @('You are right. Thank you for reporting.')
             $_.title -eq $titleToBePosted -and
             (($_.baseRefName -eq $masterBranch) -or ($_.base.ref -eq $masterBranch))
         }
-        # TODO: Post labels at the end of function
-        Add-Label -ID $IssueID -Label 'verified', 'hash-fix-needed'
-        $prs = $prs | Where-Object { $_.title -eq $titleToBePosted -and $_.baseRefName -eq $masterBranch }
+
 
         # There is alreay PR for
         if ($prs.Count -gt 0) {
