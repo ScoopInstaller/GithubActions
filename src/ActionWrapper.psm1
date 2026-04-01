@@ -10,7 +10,6 @@ function Invoke-Action {
 
     switch ($EVENT_TYPE) {
         'pull_request' { Initialize-PR }
-        'pull_request_target' { Initialize-PR }
         'issue_comment' { Initialize-PR }
         'schedule' { Initialize-Scheduled }
         'workflow_dispatch' { Initialize-Scheduled }

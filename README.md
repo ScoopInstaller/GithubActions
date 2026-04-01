@@ -108,13 +108,12 @@ jobs:
     name: Excavator
     runs-on: windows-latest
     steps:
-    - uses: actions/checkout@main
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
     - name: Excavator
       uses: ScoopInstaller/GithubActions@main
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         SKIP_UPDATED: '1'
-        THROW_ERROR: '0'
 
 #.github\workflows\issues.yml
 on:
@@ -126,9 +125,9 @@ jobs:
     name: Issue Handler
     runs-on: windows-latest
     steps:
-    - uses: actions/checkout@main
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
     - name: Issue Handler
-      uses: ScoopInstaller/Scoop-GithubActions@main
+      uses: ScoopInstaller/GithubActions@main
       if: github.event.action == 'opened' || (github.event.action == 'labeled' && contains(github.event.issue.labels.*.name, 'verify'))
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -143,7 +142,7 @@ jobs:
     name: Pull Request Validator
     runs-on: windows-latest
     steps:
-    - uses: actions/checkout@main
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
     - name: Pull Request Validator
       uses: ScoopInstaller/GithubActions@main
       if: startsWith(github.event.comment.body, '/verify')
@@ -152,7 +151,7 @@ jobs:
 
 #.github\workflows\pull_request.yml
 on:
-  pull_request_target:
+  pull_request:
     types: [ opened ]
 name: Pull Requests
 jobs:
@@ -160,9 +159,13 @@ jobs:
     name: Pull Request Validator
     runs-on: windows-latest
     steps:
-    - uses: actions/checkout@main
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
     - name: Pull Request Validator
       uses: ScoopInstaller/GithubActions@main
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
+
+## License
+
+The project is released under the [MIT](LICENSE) License.
