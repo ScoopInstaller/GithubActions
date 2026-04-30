@@ -101,7 +101,7 @@ function Test-Hash {
                     # - 'pull_request': Requires a pull request before merging
                     # - 'update': Restricts updates (direct pushes) to the branch
                     # - 'lock': The branch is read-only
-                    $prRequired = $null -ne ($rules | Where-Object { $_.type -in @('pull_request', 'update', 'lock') })
+                    $prRequired = ($rules | Where-Object { $_.type -in @('pull_request', 'update', 'lock') }).Count -gt 0
                     Write-Log "Rules evaluation result. PR required: $prRequired"
                     Write-Log "Active rules" ($rules | Select-Object -Property type)
                 } catch {
