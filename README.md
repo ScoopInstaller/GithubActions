@@ -54,7 +54,7 @@ It could be one of these:
                     1. Check if direct push to default branch is restricted (e.g., requires PR, update restriction, or branch is locked)
                     1. If restricted:
                         1. New branch `<manifest>-hash-fix-<random>` is created
-                        1. Changes are commited and pushed to new branch
+                        1. Changes are committed and pushed to new branch
                         1. New PR is created from this branch
                     1. If not restricted:
                         1. Fixes are committed and pushed directly to default branch
