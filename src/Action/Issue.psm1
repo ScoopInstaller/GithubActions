@@ -88,8 +88,41 @@ function Test-Hash {
             Invoke-GithubRequest "repos/$REPOSITORY/pulls/$prID" -Method Patch -Body @{ 'body' = (@("- Closes #$IssueID", $pr.body) -join "`r`n") }
             Add-Label -ID $IssueID -Label 'duplicate'
         } else {
-            # Check if default branch is protected
-            if (((Invoke-GithubRequest "repos/$REPOSITORY/branches/$masterBranch").Content | ConvertFrom-Json).protected) {
+            # Check if direct push to default branch is allowed
+            $branchData = (Invoke-GithubRequest "repos/$REPOSITORY/branches/$masterBranch").Content | ConvertFrom-Json
+            $prRequired = $false
+            if ($branchData.protected) {
+                Write-Log "Branch $masterBranch is protected. Checking if direct push is allowed..."
+                try {
+                    # Try getting detailed protection rules (includes legacy and modern rulesets)
+                    # Official path: GET /repos/{owner}/{repo}/rules/branches/{branch}
+                    $rules = (Invoke-GithubRequest "repos/$REPOSITORY/rules/branches/$masterBranch").Content | ConvertFrom-Json
+                    # Direct push is blocked if there are rules:
+                    # - 'pull_request': Requires a pull request before merging
+                    # - 'update': Restricts updates (direct pushes) to the branch
+                    # - 'lock': The branch is read-only
+                    $prRequired = $null -ne ($rules | Where-Object { $_.type -in @('pull_request', 'update', 'lock') })
+                    Write-Log "Rules evaluation result. PR required: $prRequired"
+                    Write-Log "Active rules" ($rules | Select-Object -Property type)
+                } catch {
+                    Write-Log "Rulesets API failed or unavailable, falling back to legacy Protection API. Error: $($_.Exception.Message)"
+                    try {
+                        # Fallback to legacy protection API if rules API is not available
+                        $protection = (Invoke-GithubRequest "repos/$REPOSITORY/branches/$masterBranch/protection").Content | ConvertFrom-Json
+                        $prRequired = $null -ne $protection.required_pull_request_reviews -or
+                                      $null -ne $protection.restrictions -or
+                                      ($null -ne $protection.lock_branch -and $protection.lock_branch.enabled)
+                        Write-Log "Protection API evaluation result. PR required: $prRequired"
+                        Write-Log "Protection details" $protection
+                    } catch {
+                        # If we cannot determine why it's protected, assume it's restrictive for safety
+                        Write-Log "Failed to retrieve protection details. Error: $($_.Exception.Message). Defaulting to PR required for safety."
+                        $prRequired = $true
+                    }
+                }
+            }
+
+            if ($prRequired) {
                 Write-Log 'PR - Create new branch and post PR'
 
                 $branch = "$manifestNameAsInBucket-hash-fix-$(Get-Random -Maximum 258258258)"

@@ -51,9 +51,13 @@ It could be one of these:
                     1. Comment to issue is posted with reference to PR
                     1. Label `duplicate` added
                 1. If none
-                    1. New branch `<manifest>-hash-fix-<random>` is created
-                    1. Changes are commited
-                    1. New PR is created from this branch
+                    1. Check if direct push to default branch is restricted (e.g., requires PR, update restriction, or branch is locked)
+                    1. If restricted:
+                        1. New branch `<manifest>-hash-fix-<random>` is created
+                        1. Changes are commited and pushed to new branch
+                        1. New PR is created from this branch
+                    1. If not restricted:
+                        1. Fixes are committed and pushed directly to default branch
             1. Labels `hash-fix-needed`, `verified` are added
         1. No problem
             1. Comment on issue is posted about hashes being right and possible causes
