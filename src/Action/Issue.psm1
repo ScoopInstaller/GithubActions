@@ -1,6 +1,18 @@
 Join-Path $PSScriptRoot '..\Helpers.psm1' | Import-Module
 Join-Path $PSScriptRoot 'Issue' | Get-ChildItem -Filter '*.psm1' | Select-Object -ExpandProperty Fullname | Import-Module
 
+function Invoke-Git {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string[]] $GitArgs
+    )
+
+    & git @GitArgs
+    if ($LASTEXITCODE -ne 0) {
+        throw "git $($GitArgs -join ' ') failed with exit code $LASTEXITCODE"
+    }
+}
+
 function Test-Hash {
     param (
         [Parameter(Mandatory = $true)]
@@ -88,38 +100,61 @@ function Test-Hash {
             Invoke-GithubRequest "repos/$REPOSITORY/pulls/$prID" -Method Patch -Body @{ 'body' = (@("- Closes #$IssueID", $pr.body) -join "`r`n") }
             Add-Label -ID $IssueID -Label 'duplicate'
         } else {
-            # Check if default branch is protected
-            if (((Invoke-GithubRequest "repos/$REPOSITORY/branches/$masterBranch").Content | ConvertFrom-Json).protected) {
-                Write-Log 'PR - Create new branch and post PR'
+            Write-Log 'Git Status:'
+            Invoke-Git -GitArgs @('status', '--porcelain')
+
+            Invoke-Git -GitArgs @('add', $gci.FullName)
+            Invoke-Git -GitArgs @('commit', '-m', "$titleToBePosted (Closes #$IssueID)")
+
+            # Try direct push
+            try {
+                Write-Log 'Commiting fix directly'
+                Invoke-Git -GitArgs @('push')
+            } catch {
+                Write-Log 'Direct push failed. Probably protected branch. Will try to create PR instead.'
 
                 $branch = "$manifestNameAsInBucket-hash-fix-$(Get-Random -Maximum 258258258)"
-
                 Write-Log 'Branch' $branch
 
-                git checkout -B $branch
-                # TODO: There is some problem
+                Invoke-Git -GitArgs @('checkout', '-B', $branch)
+                # Amend commit with new message
+                Invoke-Git -GitArgs @('commit', '--amend', '-m', "$titleToBePosted")
 
-                Write-Log 'Git Status' @(git status --porcelain)
-
-                git add $gci.FullName
-                git commit -m $titleToBePosted
-                git push origin $branch
-
-                # Create new PR
-                Invoke-GithubRequest -Query "repos/$REPOSITORY/pulls" -Method Post -Body @{
-                    'title' = $titleToBePosted
-                    'base'  = $masterBranch
-                    'head'  = $branch
-                    'body'  = "- Closes #$IssueID"
+                # Try create branch and PR
+                try {
+                    Write-Log 'Creating branch'
+                    Invoke-Git -GitArgs @('push', 'origin', $branch)
+                } catch {
+                    Write-Log 'Create branch failed. Please check workflow permissions.'
+                    Add-Comment -ID $IssueID -AppendLogLink -Message @(
+                        'Hash mismatch confirmed, but the bot could not publish the fix currently.'
+                    )
+                    return
                 }
-            } else {
-                Write-Log 'Push - Fix hash and push the commit'
 
-                Write-Log 'Git Status' @(git status --porcelain)
+                try {
+                    Write-Log 'Creating PR'
 
-                git add $gci.FullName
-                git commit -m "$titleToBePosted (Closes #$IssueID)"
-                git push
+                    # Create new PR
+                    Invoke-GithubRequest -Query "repos/$REPOSITORY/pulls" -Method Post -Body @{
+                        'title' = $titleToBePosted
+                        'base'  = $masterBranch
+                        'head'  = $branch
+                        'body'  = "- Closes #$IssueID"
+                    }
+                } catch {
+                    Write-Log 'Create PR failed. Please check workflow permissions.'
+                    # Try to delete branch if PR creation failed
+                    try {
+                        Invoke-Git -GitArgs @('push', 'origin', '--delete', $branch)
+                    } catch {
+                        Write-Log 'Failed to delete branch. Please check workflow permissions.'
+                    }
+                    Add-Comment -ID $IssueID -AppendLogLink -Message @(
+                        'Hash mismatch confirmed, but the bot could not publish the fix currently.'
+                    )
+                    return
+                }
             }
         }
         Add-Comment -ID $IssueID -Message $message -AppendLogLink
