@@ -155,7 +155,7 @@ function Show-ExtractionHelpTips {
         'dark' { $tipContent += $tips['dark']; $tipContent += '' }
         default {
             $tips.Values | ForEach-Object {
-                $tipContent += $_;
+                $tipContent += $_
                 $tipContent += ''
             }
         }
