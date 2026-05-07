@@ -206,18 +206,18 @@ function Test-Downloading {
 function Initialize-Issue {
     Write-Log 'Issue initialized'
 
-    if (-not (($EVENT.action -eq 'opened') -or ($EVENT.action -eq 'labeled'))) {
+    if (-not (($GITHUB_EVENT.action -eq 'opened') -or ($GITHUB_EVENT.action -eq 'labeled'))) {
         Write-Log "Only actions 'opened' and 'labeled' are supported"
         return
     }
 
-    $title = $EVENT.issue.title
-    $id = $EVENT.issue.number
-    $label = $EVENT.issue.labels.name
-    $body = $EVENT.issue.body
+    $title = $GITHUB_EVENT.issue.title
+    $id = $GITHUB_EVENT.issue.number
+    $label = $GITHUB_EVENT.issue.labels.name
+    $body = $GITHUB_EVENT.issue.body
 
     # Only labeled action with verify label should continue
-    if (($EVENT.action -eq 'labeled') -and ($label -notcontains 'verify')) {
+    if (($GITHUB_EVENT.action -eq 'labeled') -and ($label -notcontains 'verify')) {
         Write-Log 'Labeled action contains wrong label'
         return
     }

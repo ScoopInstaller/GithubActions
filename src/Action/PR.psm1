@@ -10,23 +10,23 @@ function Start-PR {
     #>
     $commented = $false
 
-    switch ($EVENT.action) {
+    switch ($GITHUB_EVENT.action) {
         'opened' {
             Write-Log 'Opened PR'
         }
         'created' {
             Write-Log 'Commented PR'
 
-            if ($EVENT.comment.body -like '/verify*') {
+            if ($GITHUB_EVENT.comment.body -like '/verify*') {
                 Write-Log 'Verify comment'
 
-                if ($EVENT.issue.pull_request) {
+                if ($GITHUB_EVENT.issue.pull_request) {
                     Write-Log 'Pull request comment'
 
                     $commented = $true
                     # There is need to get actual pull request event
-                    $content = Invoke-GithubRequest "repos/$REPOSITORY/pulls/$($EVENT.issue.number)" | Select-Object -ExpandProperty Content
-                    $script:EVENT_new = ConvertFrom-Json $content
+                    $content = Invoke-GithubRequest "repos/$REPOSITORY/pulls/$($GITHUB_EVENT.issue.number)" | Select-Object -ExpandProperty Content
+                    $script:GITHUB_EVENT_new = ConvertFrom-Json $content
                 } else {
                     Write-Log 'Issue comment'
                     $commented = $null # No need to do anything on issue comment
@@ -75,7 +75,7 @@ function New-FinalMessage {
         [String[]] $Invalid
     )
 
-    $prID = $EVENT.number
+    $prID = $GITHUB_EVENT.number
     $message = New-Array
 
     foreach ($ch in $Check) {
@@ -314,20 +314,20 @@ function Initialize-PR {
     if ($null -eq $commented) { return } # Exit on not supported state
     Write-Log 'Commented?' $commented
 
-    $EVENT | ConvertTo-Json -Depth 8 -Compress | Write-Log 'Pure PR Event'
-    if ($EVENT_new) {
+    $GITHUB_EVENT | ConvertTo-Json -Depth 8 -Compress | Write-Log 'Pure PR Event'
+    if ($GITHUB_EVENT_new) {
         Write-Log 'There is new event available'
-        $EVENT = $EVENT_new
-        $EVENT | ConvertTo-Json -Depth 8 -Compress | Write-Log 'New Event'
+        $GITHUB_EVENT = $GITHUB_EVENT_new
+        $GITHUB_EVENT | ConvertTo-Json -Depth 8 -Compress | Write-Log 'New Event'
     }
 
     # TODO: Ternary
-    $head = if ($commented) { $EVENT.head } else { $EVENT.pull_request.head }
+    $head = if ($commented) { $GITHUB_EVENT.head } else { $GITHUB_EVENT.pull_request.head }
 
     if ($head.repo.fork) {
         Write-Log 'Forked repository'
 
-        if ($EVENT_TYPE -ne 'pull_request_target') {
+        if ($GITHUB_EVENT_TYPE -ne 'pull_request_target') {
             # There is no need to run whole action under forked repository due to permission problem
             if ($commented -eq $false) {
                 Write-Log 'Cannot comment with read only token'
@@ -360,7 +360,7 @@ function Initialize-PR {
     (Get-ChildItem $MANIFESTS_LOCATION -Filter '*.json' -Recurse | Select-Object -ExpandProperty Basename) -join ', ' | Write-log 'Manifests'
 
     # Do not run checks on removed files
-    $files = Get-AllChangedFilesInPR $EVENT.number -Filter
+    $files = Get-AllChangedFilesInPR $GITHUB_EVENT.number -Filter
     Write-Log 'PR Changed Files' $files
     $files = $files | Where-Object -Property 'filename' -Like -Value 'bucket/*'
     Write-Log 'Only Changed Manifests' $files

@@ -16,7 +16,7 @@ Write-Log 'Importing all modules'
 # Dot sourcing needs to be done on highest scope possible to propagate into lower scopes
 Get-ChildItem (Join-Path $env:SCOOP_HOME 'lib') '*.ps1' | ForEach-Object { . $_.FullName }
 
-Write-Log 'FULL EVENT' $EVENT_RAW
+Write-Log 'FULL EVENT' $GITHUB_EVENT_RAW
 
 Invoke-Action
 

@@ -8,7 +8,7 @@ function Invoke-Action {
     #>
     Write-Log -Summary 'GITHUB API RATE LIMIT' -Message (Get-RateLimit -Core | ConvertTo-Json -Compress)
 
-    switch ($EVENT_TYPE) {
+    switch ($GITHUB_EVENT_TYPE) {
         'pull_request' { Initialize-PR }
         'issue_comment' { Initialize-PR }
         'schedule' { Initialize-Scheduled }
