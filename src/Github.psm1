@@ -14,7 +14,7 @@ function Invoke-GithubRequest {
         Invoke-GithubRequest 'repos/User/Repo/pulls' -Method 'Post' -Body @{ 'body' = 'body' }
     #>
     param(
-        [Parameter(Mandatory, ValueFromPipeline)]
+        [Parameter(Mandatory)]
         [String] $Query,
         [Microsoft.PowerShell.Commands.WebRequestMethod] $Method = 'Get',
         [Hashtable] $Body
@@ -54,7 +54,7 @@ function Add-Comment {
         If set, link to current job log will be appended to comment.
     #>
     param(
-        [Parameter(Mandatory, ValueFromPipeline)]
+        [Parameter(Mandatory)]
         [Int] $ID,
         [Alias('Comment')]
         [String[]] $Message,
@@ -79,7 +79,7 @@ function Get-AllChangedFilesInPR {
         Return only files which are not 'removed'.
     #>
     param(
-        [Parameter(Mandatory, ValueFromPipeline)]
+        [Parameter(Mandatory)]
         [Int] $ID,
         [Switch] $Filter
     )
@@ -144,7 +144,7 @@ function Close-Issue {
     .PARAMETER ID
         ID of issue / PR to be closed.
     #>
-    param([Parameter(Mandatory, ValueFromPipeline)][Int] $ID)
+    param([Parameter(Mandatory)][Int] $ID)
 
     return Invoke-GithubRequest -Query "repos/$REPOSITORY/issues/$ID" -Method Patch -Body @{ 'state' = 'closed' }
 }
@@ -160,7 +160,7 @@ function Add-Label {
         Label to be set.
     #>
     param(
-        [Parameter(Mandatory, ValueFromPipeline)]
+        [Parameter(Mandatory)]
         [Int] $ID,
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()] # > Must contains at least one label
@@ -181,7 +181,7 @@ function Remove-Label {
         Label to be removed.
     #>
     param(
-        [Parameter(Mandatory, ValueFromPipeline)]
+        [Parameter(Mandatory)]
         [Int] $ID,
         [ValidateNotNullOrEmpty()]
         [String[]] $Label

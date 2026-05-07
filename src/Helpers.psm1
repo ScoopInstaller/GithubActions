@@ -79,7 +79,7 @@ function Expand-Property {
         TODO: Rework and support nested properties
     #>
     param(
-        [Parameter(Mandatory, ValueFromPipeline)]
+        [Parameter(Mandatory)]
         [Object] $Object,
         [Parameter(Mandatory)]
         [String] $Property
