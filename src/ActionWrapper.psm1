@@ -6,7 +6,7 @@ function Invoke-Action {
     .SYNOPSIS
         Invoke specific action handler.
     #>
-    Write-Log -Summary 'GITHUB API RATE LIMIT' -Message (Get-RateLimit -Core | ConvertTo-Json -Compress)
+    Write-LogInfo -Summary 'GITHUB API RATE LIMIT' -Message (Get-RateLimit -Core | ConvertTo-Json -Compress)
 
     switch ($GITHUB_EVENT_TYPE) {
         'pull_request' { Initialize-PR }
@@ -15,10 +15,10 @@ function Invoke-Action {
         'workflow_dispatch' { Initialize-Scheduled }
         'repository_dispatch' { Initialize-Scheduled }
         'issues' { Initialize-Issue }
-        default { Write-Log 'Not supported event type' }
+        default { Write-LogInfo 'Not supported event type' }
     }
 
-    Write-Log -Summary 'GITHUB API RATE LIMIT' -Message (Get-RateLimit -Core | ConvertTo-Json -Compress)
+    Write-LogInfo -Summary 'GITHUB API RATE LIMIT' -Message (Get-RateLimit -Core | ConvertTo-Json -Compress)
 }
 
 Export-ModuleMember -Function Invoke-Action

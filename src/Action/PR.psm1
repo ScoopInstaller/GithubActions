@@ -12,32 +12,32 @@ function Resolve-PullRequestAction {
 
     switch ($GITHUB_EVENT.action) {
         'opened' {
-            Write-Log 'Opened PR'
+            Write-LogInfo 'Opened PR'
         }
         'created' {
-            Write-Log 'Commented PR'
+            Write-LogInfo 'Commented PR'
 
             if ($GITHUB_EVENT.comment.body -like '/verify*') {
-                Write-Log 'Verify comment'
+                Write-LogInfo 'Verify comment'
 
                 if ($GITHUB_EVENT.issue.pull_request) {
-                    Write-Log 'Pull request comment'
+                    Write-LogInfo 'Pull request comment'
 
                     $commented = $true
                     # There is need to get actual pull request event
                     $content = Invoke-GithubRequest "repos/$REPOSITORY/pulls/$($GITHUB_EVENT.issue.number)" | Select-Object -ExpandProperty Content
                     $script:GITHUB_EVENT_new = ConvertFrom-Json $content
                 } else {
-                    Write-Log 'Issue comment'
+                    Write-LogInfo 'Issue comment'
                     $commented = $null # No need to do anything on issue comment
                 }
             } else {
-                Write-Log 'Not supported comment body'
+                Write-LogInfo 'Not supported comment body'
                 $commented = $null
             }
         }
         default {
-            Write-Log 'Only action ''opened'' is supported'
+            Write-LogInfo 'Only action ''opened'' is supported'
             $commented = $null
         }
     }
@@ -55,7 +55,7 @@ function Set-RepositoryContext {
 
     if ($PSCmdlet.ShouldProcess('Repository', "Set repository context to $Ref")) {
         if ((git branch --show-current) -ne $Ref) {
-            Write-Log "Switching branch to $Ref"
+            Write-LogInfo "Switching branch to $Ref"
 
             git fetch --all
             git checkout $Ref
@@ -89,7 +89,7 @@ function Send-FinalMessage {
     }
 
     if ($Invalid.Count -gt 0) {
-        Write-Log 'PR contains invalid manifests'
+        Write-LogInfo 'PR contains invalid manifests'
 
         $env:NON_ZERO_EXIT = $true
         Add-IntoArray $message '### Invalid manifests'
@@ -131,7 +131,7 @@ function Test-PRFile {
     $invalid = @()
     $schema = Get-Content -Path $MANIFESTS_SCHEMA -Raw
     foreach ($f in $File) {
-        Write-Log "Starting $($f.filename) checks"
+        Write-LogInfo "Starting $($f.filename) checks"
 
         # Reset variables from previous iteration
         $manifest = $null
@@ -141,7 +141,7 @@ function Test-PRFile {
 
         # Convert path into gci item to hold all needed information
         $manifest = Get-ChildItem $BUCKET_ROOT $f.filename
-        Write-Log 'Manifest' $manifest
+        Write-LogInfo 'Manifest' $manifest
 
         # Try to parse the JSON
         $content = Get-Content -Path $manifest.FullName -Raw
@@ -150,23 +150,23 @@ function Test-PRFile {
         }
 
         if ($null -eq $object) {
-            Write-Log 'Conversion failed'
+            Write-LogInfo 'Conversion failed'
 
             # Handling of configuration files (vscode, ...) will not be problem as soon as nested bucket folder is restricted
-            Write-Log 'Extension' $manifest.Extension
+            Write-LogInfo 'Extension' $manifest.Extension
 
             if ($manifest.Extension -eq '.json') {
-                Write-Log 'Invalid JSON'
+                Write-LogInfo 'Invalid JSON'
                 $invalid += $manifest.BaseName
             } else {
-                Write-Log 'Not manifest at all'
+                Write-LogInfo 'Not manifest at all'
             }
-            Write-Log "Skipped $($f.filename)"
+            Write-LogInfo "Skipped $($f.filename)"
             continue
         }
 
         #region Lint
-        Write-Log 'Lint'
+        Write-LogInfo 'Lint'
 
         try {
             & (Join-Path $BINARIES_FOLDER 'formatjson.ps1') -App $manifest.Basename -Dir $MANIFESTS_LOCATION
@@ -177,12 +177,12 @@ function Test-PRFile {
         } catch {
             $lint = $false
 
-            Write-Log 'Lint Checks' @("Exception occurred: $($_.Exception.Message)", "$($_.ScriptStackTrace)")
+            Write-LogInfo 'Lint Checks' @("Exception occurred: $($_.Exception.Message)", "$($_.ScriptStackTrace)")
         }
 
         $statuses.Add('Lint', $lint)
 
-        Write-Log 'Lint done'
+        Write-LogInfo 'Lint done'
         #endregion
 
         #region 1. Property checks
@@ -193,7 +193,7 @@ function Test-PRFile {
 
         #region 2. Hashes
         if ($object.version -ne 'nightly') {
-            Write-Log 'Hashes'
+            Write-LogInfo 'Hashes'
 
             try {
                 $outputH = @(& (Join-Path $BINARIES_FOLDER 'checkhashes.ps1') -App $manifest.Basename -Dir $MANIFESTS_LOCATION *>&1)
@@ -201,41 +201,41 @@ function Test-PRFile {
                 $outputH = @("Exception occurred: $($_.Exception.Message)", "$($_.ScriptStackTrace)")
             }
 
-            Write-Log 'Output' $outputH
+            Write-LogInfo 'Output' $outputH
 
             # Everything should be all right when latest string in array will be OK
             $statuses.Add('Hashes', ($outputH[-1] -like 'OK'))
 
-            Write-Log 'Hashes done'
+            Write-LogInfo 'Hashes done'
         }
         #endregion 2. Hashes
 
         #region 3. Checkver and 4. Autoupdate
         if ($object.checkver) {
-            Write-Log 'Checkver'
+            Write-LogInfo 'Checkver'
             $outputV = @(& (Join-Path $BINARIES_FOLDER 'checkver.ps1') -App $manifest.Basename -Dir $MANIFESTS_LOCATION -Force *>&1)
-            Write-log 'Output' $outputV
+            Write-LogInfo 'Output' $outputV
 
             $joinedOutputV = $outputV -join ' '
             # Try to match "<manifest-name>: <version>" from outputV
             $checkverRegex = "$([regex]::escape($manifest.Basename)):\s*$([regex]::escape($($object.version)))"
             $checkver = $joinedOutputV -match $checkverRegex
             $statuses.Add('Checkver', $checkver)
-            Write-Log 'Checkver done'
+            Write-LogInfo 'Checkver done'
 
             #region Autoupdate
             if ($object.autoupdate) {
-                Write-Log 'Autoupdate'
+                Write-LogInfo 'Autoupdate'
                 $autoupdate = $false
                 switch -Wildcard ($outputV[-1]) {
                     'ERROR*' {
-                        Write-Log 'Error in checkver'
+                        Write-LogInfo 'Error in checkver'
                     }
                     "couldn't match*" {
-                        Write-Log 'Version match fail'
+                        Write-LogInfo 'Version match fail'
                     }
                     'Writing updated*' {
-                        Write-Log 'Autoupdate finished successfully'
+                        Write-LogInfo 'Autoupdate finished successfully'
                         $autoupdate = $true
                     }
                     default { $autoupdate = $checkver }
@@ -252,29 +252,29 @@ function Test-PRFile {
                     }
                     $statuses.Add('Autoupdate Hash Extraction', $result)
                 }
-                Write-Log 'Autoupdate done'
+                Write-LogInfo 'Autoupdate done'
             }
             #endregion Autoupdate
         }
         #endregion 3. Checkver and 4. Autoupdate
 
         #region 5. Manifest format
-        # Write-Log 'Format'
+        # Write-LogInfo 'Format'
         # TODO: implement format check using array compare if possible (or just strings with raws)
         # TODO: I am not sure if this will handle tabs and everything what could go wrong.
         #$raw = Get-Content $manifest.Fullname -Raw
         #$new_raw = $object | ConvertToPrettyJson
         #$statuses.Add('Format', ($raw -eq $new_raw))
-        # Write-Log 'Format done'
+        # Write-LogInfo 'Format done'
         #endregion 4. Manifest format
 
         #region 6. Installation
-        # Write-Log 'Installation'
+        # Write-LogInfo 'Installation'
         # # Try catch as currently some components are throwing exceptions
         # try {
         #     $outputI = @(scoop install $manifest.FullName *>&1)
         # } catch {
-        #     Write-Log 'Installation failed' # Mainly due to some manifest script problem
+        #     Write-LogInfo 'Installation failed' # Mainly due to some manifest script problem
         #     $installation = $false
         # }
 
@@ -282,17 +282,17 @@ function Test-PRFile {
         # }
 
         # $statuses.Add('Installation', $installation)
-        # Write-Log 'Installation done'
+        # Write-LogInfo 'Installation done'
         #endregion 6. Installation
 
         #region 7. Uninstallation
-        # Write-Log 'Uninstallation'
-        # Write-Log 'Uninstallation done'
+        # Write-LogInfo 'Uninstallation'
+        # Write-LogInfo 'Uninstallation done'
         #endregion 7. Uninstallation
 
         $check += [Ordered] @{ 'Name' = $manifest.Basename; 'Statuses' = $statuses }
 
-        Write-Log "Finished $($f.filename) checks"
+        Write-LogInfo "Finished $($f.filename) checks"
     }
 
     return $check, $invalid
@@ -307,7 +307,7 @@ function Initialize-PR {
         2. Validate all changed manifests
         3. Post comment with check results
     #>
-    Write-Log 'PR initialized'
+    Write-LogInfo 'PR initialized'
 
     # required to access releases in private GitHub repos
     $env:SCOOP_GH_TOKEN = $env:GITHUB_TOKEN
@@ -315,32 +315,32 @@ function Initialize-PR {
     #region Stage 1 - Repository initialization
     $commented = Resolve-PullRequestAction
     if ($null -eq $commented) { return } # Exit on not supported state
-    Write-Log 'Commented?' $commented
+    Write-LogInfo 'Commented?' $commented
 
-    $GITHUB_EVENT | ConvertTo-Json -Depth 8 -Compress | Write-Log 'Pure PR Event'
+    $GITHUB_EVENT | ConvertTo-Json -Depth 8 -Compress | Write-LogInfo 'Pure PR Event'
     if ($GITHUB_EVENT_new) {
-        Write-Log 'There is new event available'
+        Write-LogInfo 'There is new event available'
         $GITHUB_EVENT = $GITHUB_EVENT_new
-        $GITHUB_EVENT | ConvertTo-Json -Depth 8 -Compress | Write-Log 'New Event'
+        $GITHUB_EVENT | ConvertTo-Json -Depth 8 -Compress | Write-LogInfo 'New Event'
     }
 
     # TODO: Ternary
     $head = if ($commented) { $GITHUB_EVENT.head } else { $GITHUB_EVENT.pull_request.head }
 
     if ($head.repo.fork) {
-        Write-Log 'Forked repository'
+        Write-LogInfo 'Forked repository'
 
         if ($GITHUB_EVENT_TYPE -ne 'pull_request_target') {
             # There is no need to run whole action under forked repository due to permission problem
             if ($commented -eq $false) {
-                Write-Log 'Cannot comment with read only token'
+                Write-LogInfo 'Cannot comment with read only token'
                 # TODO: Execute it and adopt pester like checks
                 return
             }
         }
 
         $REPOSITORY_forked = "$($head.repo.full_name):$($head.ref)"
-        Write-Log 'Repo' $REPOSITORY_forked
+        Write-LogInfo 'Repo' $REPOSITORY_forked
 
         $cloneLocation = "${env:TMP}\forked_repository"
         git clone --branch $head.ref $head.repo.clone_url $cloneLocation
@@ -349,7 +349,7 @@ function Initialize-PR {
         # TODO: Ternary
         $script:MANIFESTS_LOCATION = if (Test-Path $buck) { $buck } else { $BUCKET_ROOT }
 
-        Write-Log "Switching to $REPOSITORY_forked"
+        Write-LogInfo "Switching to $REPOSITORY_forked"
         Push-Location $cloneLocation
     }
 
@@ -358,25 +358,25 @@ function Initialize-PR {
     #endregion Stage 1 - Repository initialization
 
     # In case of forked repository it needs to be '/github/forked_workspace'
-    Get-Location | Write-Log 'Context of action'
-    (Get-ChildItem $BUCKET_ROOT | Select-Object -ExpandProperty Basename) -join ', ' | Write-log 'Root Files'
-    (Get-ChildItem $MANIFESTS_LOCATION -Filter '*.json' -Recurse | Select-Object -ExpandProperty Basename) -join ', ' | Write-log 'Manifests'
+    Get-Location | Write-LogInfo 'Context of action'
+    (Get-ChildItem $BUCKET_ROOT | Select-Object -ExpandProperty Basename) -join ', ' | Write-LogInfo 'Root Files'
+    (Get-ChildItem $MANIFESTS_LOCATION -Filter '*.json' -Recurse | Select-Object -ExpandProperty Basename) -join ', ' | Write-LogInfo 'Manifests'
 
     # Do not run checks on removed files
     $files = Get-AllChangedFilesInPR $GITHUB_EVENT.number -Filter
-    Write-Log 'PR Changed Files' $files
+    Write-LogInfo 'PR Changed Files' $files
     $files = $files | Where-Object -Property 'filename' -Like -Value 'bucket/*'
-    Write-Log 'Only Changed Manifests' $files
+    Write-LogInfo 'Only Changed Manifests' $files
 
     # Stage 2 - Manifests validation
     $check, $invalid = Test-PRFile $files
 
     #region Stage 3 - Final Message
-    Write-Log 'Checked manifests' $check.name
-    Write-Log 'Invalids' $invalid
+    Write-LogInfo 'Checked manifests' $check.name
+    Write-LogInfo 'Invalids' $invalid
 
     if (($check.Count -eq 0) -and ($invalid.Count -eq 0)) {
-        Write-Log 'No compatible files in PR'
+        Write-LogInfo 'No compatible files in PR'
         return
     }
 
@@ -384,7 +384,7 @@ function Initialize-PR {
     Send-FinalMessage $check $invalid
     #endregion Stage 3 - Final Message
 
-    Write-Log 'PR finished'
+    Write-LogInfo 'PR finished'
 }
 
 Export-ModuleMember -Function Initialize-PR

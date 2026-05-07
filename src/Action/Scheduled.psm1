@@ -5,7 +5,7 @@ function Initialize-Scheduled {
     .SYNOPSIS
         Excavator alternative. Based on schedule execute of auto-pr binary.
     #>
-    Write-Log 'Scheduled initialized'
+    Write-LogInfo 'Scheduled initialized'
 
     if ($env:GITHUB_REF_NAME) {
         $_BRANCH = $env:GITHUB_REF_NAME
@@ -31,7 +31,7 @@ function Initialize-Scheduled {
     & (Join-Path $BINARIES_FOLDER 'auto-pr.ps1') @params
     # TODO: Post some comment?? Or other way how to publish logs for non collaborators.
 
-    Write-Log 'Scheduled finished'
+    Write-LogInfo 'Scheduled finished'
 }
 
 Export-ModuleMember -Function Initialize-Scheduled

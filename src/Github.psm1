@@ -30,11 +30,11 @@ function Invoke-GithubRequest {
         'Uri'     = "$baseUrl/$Query"
     }
 
-    Write-Log 'Github Request' $parameters
+    Write-LogInfo 'Github Request' $parameters
 
     if ($Body) { $parameters.Add('Body', (ConvertTo-Json $Body -Depth 8 -Compress)) }
 
-    Write-Log 'Request Body' $parameters.Body
+    Write-LogInfo 'Request Body' $parameters.Body
 
     $env:GH_REQUEST_COUNTER = ([int] $env:GH_REQUEST_COUNTER) + 1
 
@@ -226,7 +226,7 @@ function Get-RateLimit {
 
         $rateLimit = $response.Content | ConvertFrom-Json
     } catch {
-        Write-Log -Summary "Failed to retrieve rate limit information.`n Exception occurred: $($_.Exception.Message)"
+        Write-LogInfo -Summary "Failed to retrieve rate limit information.`n Exception occurred: $($_.Exception.Message)"
     }
 
     if ($Core -and $rateLimit -and $rateLimit.resources -and $rateLimit.resources.core) {
@@ -314,7 +314,7 @@ function Get-LogURL {
         $logURL += "/job/$job_id"
     }
 
-    Write-Log 'Log URL' $logURL
+    Write-LogInfo 'Log URL' $logURL
 
     return $logURL
 }
