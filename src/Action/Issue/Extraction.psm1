@@ -70,7 +70,7 @@ function Test-ExtractDir {
     Add-Comment -ID $IssueID -Message $message -AppendLogLink
 }
 
-function Show-ExtractionHelpTips {
+function Show-ExtractionHelpDoc {
     param (
         [Parameter(Mandatory = $true)]
         [String] $App,
@@ -166,4 +166,4 @@ function Show-ExtractionHelpTips {
     Add-Comment -ID $IssueID -Message $message
 }
 
-Export-ModuleMember -Function Test-ExtractDir, Show-ExtractionHelpTips
+Export-ModuleMember -Function Test-ExtractDir, Show-ExtractionHelpDoc

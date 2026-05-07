@@ -45,8 +45,12 @@ function New-Array {
     .SYNOPSIS
         Create new Array list. More suitable for usage as it provides better operations.
     #>
+    [CmdletBinding(SupportsShouldProcess)]
+    param()
 
-    return New-Object System.Collections.ArrayList
+    if ($PSCmdlet.ShouldProcess('In-memory', 'Create New Array')) {
+        return New-Object System.Collections.ArrayList
+    }
 }
 
 function Add-IntoArray {
@@ -146,9 +150,16 @@ function New-DetailsCommentString {
         Type of code fenced block (json, yml, ...).
         Needs to be valid markdown code fenced block type.
     #>
-    param([Parameter(Mandatory)][String] $Summary, [String[]] $Content, [String] $Type = 'text')
+    [CmdletBinding(SupportsShouldProcess)]
+    param(
+        [Parameter(Mandatory)]
+        [String] $Summary,
+        [String[]] $Content,
+        [String] $Type = 'text'
+    )
 
-    return @"
+    if ($PSCmdlet.ShouldProcess('In-memory', 'Create details comment string')) {
+        return @"
 <details>
 <summary>$Summary</summary>
 
@@ -157,6 +168,7 @@ $($Content -join "`r`n")
 ``````
 </details>
 "@
+    }
 }
 
 function New-CheckListItem {
@@ -172,19 +184,28 @@ function New-CheckListItem {
     .PARAMETER Simple
         Simple list item will be used instead of check list.
     #>
-    param ([Parameter(Mandatory)][String] $Item, [Int] $IndentLevel = 0, [Switch] $OK, [Switch] $Simple)
+    [CmdletBinding(SupportsShouldProcess)]
+    param(
+        [Parameter(Mandatory)]
+        [String] $Item,
+        [Int] $IndentLevel = 0,
+        [Switch] $OK,
+        [Switch] $Simple
+    )
 
-    $ind = ' ' * 4 * $IndentLevel
-    $char = if ($OK) { 'x' } else { ' ' }
-    $check = if ($Simple) { '' } else { "[$char] " }
+    if ($PSCmdlet.ShouldProcess('In-memory', "Create CheckListItem: $Item")) {
+        $ind = ' ' * 4 * $IndentLevel
+        $char = if ($OK) { 'x' } else { ' ' }
+        $check = if ($Simple) { '' } else { "[$char] " }
 
-    return "$ind- $check$Item"
+        return "$ind- $check$Item"
+    }
 }
 
-function New-CheckList {
+function ConvertTo-CheckList {
     <#
     .SYNOPSIS
-        Create checklist.
+        Create checklist from check statuses.
     .PARAMETER Status
         Hashtable/PSCustomObject with name of check as key and boolean (or other pscustomobject) as value.
     #>
@@ -285,4 +306,4 @@ function Resolve-IssueTitle {
 
 Export-ModuleMember -Function Write-Log, Get-EnvironmentVariables, New-Array, Add-IntoArray, Initialize-NeededConfiguration, `
     Expand-Property, Get-Manifest, New-DetailsCommentString, New-CheckListItem, Test-NestedBucket, Resolve-IssueTitle, `
-    New-CheckList
+    ConvertTo-CheckList

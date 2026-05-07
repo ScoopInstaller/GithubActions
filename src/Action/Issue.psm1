@@ -264,7 +264,7 @@ function Initialize-Issue {
         }
         '(decompress|extract).*error' {
             Write-Log 'Detected issue type' 'Decompression/Extraction error.'
-            Show-ExtractionHelpTips $problematicName $id $body
+            Show-ExtractionHelpDoc $problematicName $id $body
         }
         default { Write-Log 'Unsupported issue type' $problem }
     }

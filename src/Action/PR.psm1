@@ -1,6 +1,6 @@
 Join-Path $PSScriptRoot '..\Helpers.psm1' | Import-Module
 
-function Start-PR {
+function Resolve-PullRequestAction {
     <#
     .SYNOPSIS
         PR state handler.
@@ -50,18 +50,21 @@ function Set-RepositoryContext {
     .SYNOPSIS
         Repository context of commented PR is not set to correct $head.ref.
     #>
+    [CmdletBinding(SupportsShouldProcess)]
     param ([Parameter(Mandatory)] $Ref)
 
-    if ((git branch --show-current) -ne $Ref) {
-        Write-Log "Switching branch to $Ref"
+    if ($PSCmdlet.ShouldProcess('Repository', "Set repository context to $Ref")) {
+        if ((git branch --show-current) -ne $Ref) {
+            Write-Log "Switching branch to $Ref"
 
-        git fetch --all
-        git checkout $Ref
-        git pull
+            git fetch --all
+            git checkout $Ref
+            git pull
+        }
     }
 }
 
-function New-FinalMessage {
+function Send-FinalMessage {
     <#
     .SYNOPSIS
         Create and post final comment with information for collaborators.
@@ -81,7 +84,7 @@ function New-FinalMessage {
     foreach ($ch in $Check) {
         Add-IntoArray $message "### $($ch.Name)"
         Add-IntoArray $message ''
-        New-CheckList $ch.Statuses | ForEach-Object { Add-IntoArray $message $_ }
+        ConvertTo-CheckList $ch.Statuses | ForEach-Object { Add-IntoArray $message $_ }
         Add-IntoArray $message ''
     }
 
@@ -310,7 +313,7 @@ function Initialize-PR {
     $env:SCOOP_GH_TOKEN = $env:GITHUB_TOKEN
 
     #region Stage 1 - Repository initialization
-    $commented = Start-PR
+    $commented = Resolve-PullRequestAction
     if ($null -eq $commented) { return } # Exit on not supported state
     Write-Log 'Commented?' $commented
 
@@ -378,7 +381,7 @@ function Initialize-PR {
     }
 
     # TODO: Pester like check
-    New-FinalMessage $check $invalid
+    Send-FinalMessage $check $invalid
     #endregion Stage 3 - Final Message
 
     Write-Log 'PR finished'

@@ -116,6 +116,7 @@ function New-Issue {
         List of user logins to be automatically assigned.
         Authenticated user needs push access to repository to be able to set assignees.
     #>
+    [CmdletBinding(SupportsShouldProcess)]
     param(
         [Parameter(Mandatory)]
         [String] $Title,
@@ -125,15 +126,17 @@ function New-Issue {
         [String[]] $Assignee = @()
     )
 
-    $params = @{
-        'title'     = $Title
-        'body'      = ($Body -join "`r`n")
-        'labels'    = $Label
-        'assignees' = $Assignee
-    }
-    if ($Milestone) { $params.Add('milestone', $Milestone) }
+    if ($PSCmdlet.ShouldProcess("GitHub: $REPOSITORY", 'Create New Issue')) {
+        $params = @{
+            'title'     = $Title
+            'body'      = ($Body -join "`r`n")
+            'labels'    = $Label
+            'assignees' = $Assignee
+        }
+        if ($Milestone) { $params.Add('milestone', $Milestone) }
 
-    return Invoke-GithubRequest "repos/$REPOSITORY/issues" -Method 'Post' -Body $params
+        return Invoke-GithubRequest "repos/$REPOSITORY/issues" -Method 'Post' -Body $params
+    }
 }
 
 function Close-Issue {
@@ -180,6 +183,7 @@ function Remove-Label {
     .PARAMETER Label
         Label to be removed.
     #>
+    [CmdletBinding(SupportsShouldProcess)]
     param(
         [Parameter(Mandatory)]
         [Int] $ID,
@@ -187,18 +191,20 @@ function Remove-Label {
         [String[]] $Label
     )
 
-    $responses = New-Array
-    # Get all labels on specific issue
-    $issueLabels = (Invoke-GithubRequest -Query "repos/$REPOSITORY/issues/$ID/labels" | Select-Object -ExpandProperty Content | ConvertFrom-Json).name
+    if ($PSCmdlet.ShouldProcess("GitHub: $REPOSITORY", "Remove Label(s) from Issue #$ID")) {
+        $responses = New-Array
+        # Get all labels on specific issue
+        $issueLabels = (Invoke-GithubRequest -Query "repos/$REPOSITORY/issues/$ID/labels" | Select-Object -ExpandProperty Content | ConvertFrom-Json).name
 
-    foreach ($lab in $Label) {
-        if ($issueLabels -contains $lab) {
-            # https://developer.github.com/v3/issues/labels/#list-labels-on-an-issue
-            Add-IntoArray $responses (Invoke-GithubRequest -Query "repos/$REPOSITORY/issues/$ID/labels/$label" -Method Delete)
+        foreach ($lab in $Label) {
+            if ($issueLabels -contains $lab) {
+                # https://developer.github.com/v3/issues/labels/#list-labels-on-an-issue
+                Add-IntoArray $responses (Invoke-GithubRequest -Query "repos/$REPOSITORY/issues/$ID/labels/$label" -Method Delete)
+            }
         }
-    }
 
-    return $responses
+        return $responses
+    }
 }
 
 function Get-RateLimit {
