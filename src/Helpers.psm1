@@ -1,9 +1,9 @@
 Join-Path $PSScriptRoot 'Variables.psm1' | Import-Module
 
-function Write-Log {
+function Write-LogInfo {
     <#
     .SYNOPSIS
-        Persist message in docker log. For debug mainly. Write-Host is more suitable because then write-log is not interfering with pipes.
+        Persist message in docker log. For debug mainly. Write-Host is more suitable because then Write-LogInfo is not interfering with pipes.
     .PARAMETER Summary
         Header of log.
     .PARAMETER Message
@@ -15,20 +15,22 @@ function Write-Log {
         [Object[]] $Message
     )
 
-    # If it is only summary it is informative log
-    if ($Summary -and ($null -eq $Message)) {
-        Write-Host "INFO: $Summary"
-    } elseif (($Message.Count -eq 1) -and ($Message[0] -isnot [Hashtable])) {
-        # Simple non hashtable object and summary should be one liner
-        Write-Host "${Summary}: $Message"
-    } else {
-        # Detailed output using format table
-        Write-Host "Log of ${Summary}:"
-        $mess = ($Message | Format-Table -HideTableHeaders -AutoSize | Out-String).Trim() -split "`r`n"
-        Write-Host ($mess | ForEach-Object { "`n    $_" })
-    }
+    process {
+        # If it is only summary it is informative log
+        if ($Summary -and ($null -eq $Message)) {
+            Write-Host "INFO: $Summary"
+        } elseif (($Message.Count -eq 1) -and ($Message[0] -isnot [Hashtable])) {
+            # Simple non hashtable object and summary should be one liner
+            Write-Host "${Summary}: $Message"
+        } else {
+            # Detailed output using format table
+            Write-Host "Log of ${Summary}:"
+            $mess = ($Message | Format-Table -HideTableHeaders -AutoSize | Out-String).Trim() -split "`r`n"
+            Write-Host ($mess | ForEach-Object { "`n    $_" })
+        }
 
-    Write-Host ''
+        Write-Host ''
+    }
 }
 
 function Get-EnvironmentVariable {
@@ -45,8 +47,12 @@ function New-Array {
     .SYNOPSIS
         Create new Array list. More suitable for usage as it provides better operations.
     #>
+    [CmdletBinding(SupportsShouldProcess)]
+    param()
 
-    return New-Object System.Collections.ArrayList
+    if ($PSCmdlet.ShouldProcess('In-memory', 'Create New Array')) {
+        return New-Object System.Collections.ArrayList
+    }
 }
 
 function Add-IntoArray {
@@ -79,7 +85,7 @@ function Expand-Property {
         TODO: Rework and support nested properties
     #>
     param(
-        [Parameter(Mandatory, ValueFromPipeline)]
+        [Parameter(Mandatory)]
         [Object] $Object,
         [Parameter(Mandatory)]
         [String] $Property
@@ -115,7 +121,7 @@ function Initialize-NeededConfiguration {
     }
 
     # Log all environment variables
-    Write-Log 'Environment' (Get-EnvironmentVariable)
+    Write-LogInfo 'Environment' (Get-EnvironmentVariable)
 }
 
 function Get-Manifest {
@@ -146,9 +152,16 @@ function New-DetailsCommentString {
         Type of code fenced block (json, yml, ...).
         Needs to be valid markdown code fenced block type.
     #>
-    param([Parameter(Mandatory)][String] $Summary, [String[]] $Content, [String] $Type = 'text')
+    [CmdletBinding(SupportsShouldProcess)]
+    param(
+        [Parameter(Mandatory)]
+        [String] $Summary,
+        [String[]] $Content,
+        [String] $Type = 'text'
+    )
 
-    return @"
+    if ($PSCmdlet.ShouldProcess('In-memory', 'Create details comment string')) {
+        return @"
 <details>
 <summary>$Summary</summary>
 
@@ -157,6 +170,7 @@ $($Content -join "`r`n")
 ``````
 </details>
 "@
+    }
 }
 
 function New-CheckListItem {
@@ -172,19 +186,28 @@ function New-CheckListItem {
     .PARAMETER Simple
         Simple list item will be used instead of check list.
     #>
-    param ([Parameter(Mandatory)][String] $Item, [Int] $IndentLevel = 0, [Switch] $OK, [Switch] $Simple)
+    [CmdletBinding(SupportsShouldProcess)]
+    param(
+        [Parameter(Mandatory)]
+        [String] $Item,
+        [Int] $IndentLevel = 0,
+        [Switch] $OK,
+        [Switch] $Simple
+    )
 
-    $ind = ' ' * 4 * $IndentLevel
-    $char = if ($OK) { 'x' } else { ' ' }
-    $check = if ($Simple) { '' } else { "[$char] " }
+    if ($PSCmdlet.ShouldProcess('In-memory', "Create CheckListItem: $Item")) {
+        $ind = ' ' * 4 * $IndentLevel
+        $char = if ($OK) { 'x' } else { ' ' }
+        $check = if ($Simple) { '' } else { "[$char] " }
 
-    return "$ind- $check$Item"
+        return "$ind- $check$Item"
+    }
 }
 
-function New-CheckList {
+function ConvertTo-CheckList {
     <#
     .SYNOPSIS
-        Create checklist.
+        Create checklist from check statuses.
     .PARAMETER Status
         Hashtable/PSCustomObject with name of check as key and boolean (or other pscustomobject) as value.
     #>
@@ -221,7 +244,7 @@ function New-CheckList {
     }
 
     $result | ForEach-Object {
-        Write-Log $_.Item $_.State
+        Write-LogInfo $_.Item $_.State
         if ($_.State -eq $false) { $env:NON_ZERO_EXIT = $true }
         $final += New-CheckListItem -Item $_.Item -IndentLevel $_.Indent -OK:$_.State
     }
@@ -238,9 +261,9 @@ function Test-NestedBucket {
     #>
 
     if (Test-Path $MANIFESTS_LOCATION) {
-        Write-Log 'Bucket contains nested bucket folder'
+        Write-LogInfo 'Bucket contains nested bucket folder'
     } else {
-        Write-Log 'Buckets without nested bucket folder are not supported.'
+        Write-LogInfo 'Buckets without nested bucket folder are not supported.'
 
         $adopt = 'Adopt nested bucket structure'
         # Get opened issues
@@ -249,7 +272,7 @@ function Test-NestedBucket {
         $issues = ConvertFrom-Json $req.Content | Where-Object { $_.title -eq $adopt }
 
         if ($issues -and ($issues.Count -gt 0)) {
-            Write-Log 'Issue already exists'
+            Write-LogInfo 'Issue already exists'
         } else {
             New-Issue -Title $adopt -Body @(
                 'Buckets without nested `bucket` folder are not supported. You will not be able to use actions without it.',
@@ -283,6 +306,6 @@ function Resolve-IssueTitle {
     }
 }
 
-Export-ModuleMember -Function Write-Log, Get-EnvironmentVariables, New-Array, Add-IntoArray, Initialize-NeededConfiguration, `
+Export-ModuleMember -Function Write-LogInfo, Get-EnvironmentVariables, New-Array, Add-IntoArray, Initialize-NeededConfiguration, `
     Expand-Property, Get-Manifest, New-DetailsCommentString, New-CheckListItem, Test-NestedBucket, Resolve-IssueTitle, `
-    New-CheckList
+    ConvertTo-CheckList

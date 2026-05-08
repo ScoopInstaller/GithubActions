@@ -14,7 +14,7 @@ function Invoke-GithubRequest {
         Invoke-GithubRequest 'repos/User/Repo/pulls' -Method 'Post' -Body @{ 'body' = 'body' }
     #>
     param(
-        [Parameter(Mandatory, ValueFromPipeline)]
+        [Parameter(Mandatory)]
         [String] $Query,
         [Microsoft.PowerShell.Commands.WebRequestMethod] $Method = 'Get',
         [Hashtable] $Body
@@ -30,11 +30,11 @@ function Invoke-GithubRequest {
         'Uri'     = "$baseUrl/$Query"
     }
 
-    Write-Log 'Github Request' $parameters
+    Write-LogInfo 'Github Request' $parameters
 
     if ($Body) { $parameters.Add('Body', (ConvertTo-Json $Body -Depth 8 -Compress)) }
 
-    Write-Log 'Request Body' $parameters.Body
+    Write-LogInfo 'Request Body' $parameters.Body
 
     $env:GH_REQUEST_COUNTER = ([int] $env:GH_REQUEST_COUNTER) + 1
 
@@ -54,7 +54,7 @@ function Add-Comment {
         If set, link to current job log will be appended to comment.
     #>
     param(
-        [Parameter(Mandatory, ValueFromPipeline)]
+        [Parameter(Mandatory)]
         [Int] $ID,
         [Alias('Comment')]
         [String[]] $Message,
@@ -79,7 +79,7 @@ function Get-AllChangedFilesInPR {
         Return only files which are not 'removed'.
     #>
     param(
-        [Parameter(Mandatory, ValueFromPipeline)]
+        [Parameter(Mandatory)]
         [Int] $ID,
         [Switch] $Filter
     )
@@ -116,6 +116,7 @@ function New-Issue {
         List of user logins to be automatically assigned.
         Authenticated user needs push access to repository to be able to set assignees.
     #>
+    [CmdletBinding(SupportsShouldProcess)]
     param(
         [Parameter(Mandatory)]
         [String] $Title,
@@ -125,15 +126,17 @@ function New-Issue {
         [String[]] $Assignee = @()
     )
 
-    $params = @{
-        'title'     = $Title
-        'body'      = ($Body -join "`r`n")
-        'labels'    = $Label
-        'assignees' = $Assignee
-    }
-    if ($Milestone) { $params.Add('milestone', $Milestone) }
+    if ($PSCmdlet.ShouldProcess("GitHub: $REPOSITORY", 'Create New Issue')) {
+        $params = @{
+            'title'     = $Title
+            'body'      = ($Body -join "`r`n")
+            'labels'    = $Label
+            'assignees' = $Assignee
+        }
+        if ($Milestone) { $params.Add('milestone', $Milestone) }
 
-    return Invoke-GithubRequest "repos/$REPOSITORY/issues" -Method 'Post' -Body $params
+        return Invoke-GithubRequest "repos/$REPOSITORY/issues" -Method 'Post' -Body $params
+    }
 }
 
 function Close-Issue {
@@ -144,7 +147,7 @@ function Close-Issue {
     .PARAMETER ID
         ID of issue / PR to be closed.
     #>
-    param([Parameter(Mandatory, ValueFromPipeline)][Int] $ID)
+    param([Parameter(Mandatory)][Int] $ID)
 
     return Invoke-GithubRequest -Query "repos/$REPOSITORY/issues/$ID" -Method Patch -Body @{ 'state' = 'closed' }
 }
@@ -160,7 +163,7 @@ function Add-Label {
         Label to be set.
     #>
     param(
-        [Parameter(Mandatory, ValueFromPipeline)]
+        [Parameter(Mandatory)]
         [Int] $ID,
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()] # > Must contains at least one label
@@ -180,25 +183,28 @@ function Remove-Label {
     .PARAMETER Label
         Label to be removed.
     #>
+    [CmdletBinding(SupportsShouldProcess)]
     param(
-        [Parameter(Mandatory, ValueFromPipeline)]
+        [Parameter(Mandatory)]
         [Int] $ID,
         [ValidateNotNullOrEmpty()]
         [String[]] $Label
     )
 
-    $responses = New-Array
-    # Get all labels on specific issue
-    $issueLabels = (Invoke-GithubRequest -Query "repos/$REPOSITORY/issues/$ID/labels" | Select-Object -ExpandProperty Content | ConvertFrom-Json).name
+    if ($PSCmdlet.ShouldProcess("GitHub: $REPOSITORY", "Remove Label(s) from Issue #$ID")) {
+        $responses = New-Array
+        # Get all labels on specific issue
+        $issueLabels = (Invoke-GithubRequest -Query "repos/$REPOSITORY/issues/$ID/labels" | Select-Object -ExpandProperty Content | ConvertFrom-Json).name
 
-    foreach ($lab in $Label) {
-        if ($issueLabels -contains $lab) {
-            # https://developer.github.com/v3/issues/labels/#list-labels-on-an-issue
-            Add-IntoArray $responses (Invoke-GithubRequest -Query "repos/$REPOSITORY/issues/$ID/labels/$label" -Method Delete)
+        foreach ($lab in $Label) {
+            if ($issueLabels -contains $lab) {
+                # https://developer.github.com/v3/issues/labels/#list-labels-on-an-issue
+                Add-IntoArray $responses (Invoke-GithubRequest -Query "repos/$REPOSITORY/issues/$ID/labels/$label" -Method Delete)
+            }
         }
-    }
 
-    return $responses
+        return $responses
+    }
 }
 
 function Get-RateLimit {
@@ -220,7 +226,7 @@ function Get-RateLimit {
 
         $rateLimit = $response.Content | ConvertFrom-Json
     } catch {
-        Write-Log -Summary "Failed to retrieve rate limit information.`n Exception occurred: $($_.Exception.Message)"
+        Write-LogInfo -Summary "Failed to retrieve rate limit information.`n Exception occurred: $($_.Exception.Message)"
     }
 
     if ($Core -and $rateLimit -and $rateLimit.resources -and $rateLimit.resources.core) {
@@ -308,7 +314,7 @@ function Get-LogURL {
         $logURL += "/job/$job_id"
     }
 
-    Write-Log 'Log URL' $logURL
+    Write-LogInfo 'Log URL' $logURL
 
     return $logURL
 }

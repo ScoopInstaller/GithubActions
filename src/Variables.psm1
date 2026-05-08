@@ -13,11 +13,11 @@ $env:GH_REQUEST_COUNTER = 0
 $NON_ZERO = 258
 
 # Convert actual API response to object
-$EVENT = Get-Content $env:GITHUB_EVENT_PATH -Raw | ConvertFrom-Json
+$GITHUB_EVENT = Get-Content $env:GITHUB_EVENT_PATH -Raw | ConvertFrom-Json
 # Compressed Event
-$EVENT_RAW = ConvertTo-Json $EVENT -Depth 100 -Compress
+$GITHUB_EVENT_RAW = ConvertTo-Json $GITHUB_EVENT -Depth 100 -Compress
 # Event type for automatic handler detection
-$EVENT_TYPE = $env:GITHUB_EVENT_NAME
+$GITHUB_EVENT_TYPE = $env:GITHUB_EVENT_NAME
 
 # user/repo format
 $REPOSITORY = $env:GITHUB_REPOSITORY
@@ -34,7 +34,7 @@ $MANIFESTS_LOCATION = Join-Path $BUCKET_ROOT 'bucket'
 
 $DEFAULT_EMAIL = '41898282+github-actions[bot]@users.noreply.github.com'
 
-Export-ModuleMember -Variable EVENT, EVENT_RAW, EVENT_TYPE, `
+Export-ModuleMember -Variable GITHUB_EVENT, GITHUB_EVENT_RAW, GITHUB_EVENT_TYPE, `
     REPOSITORY, JOB, RUN_ID, `
     BUCKET_ROOT, BINARIES_FOLDER, `
     MANIFESTS_SCHEMA, MANIFESTS_LOCATION, NON_ZERO, DEFAULT_EMAIL

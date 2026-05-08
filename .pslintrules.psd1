@@ -25,7 +25,7 @@
         # PSUseDeclaredVarsMoreThanAssignments doesn't currently work due to:
         # https://github.com/PowerShell/PSScriptAnalyzer/issues/636
         'PSUseDeclaredVarsMoreThanAssignments',
-        # `Write-Log` uses `Write-Host` currently.
+        # `Write-LogInfo` uses `Write-Host` currently.
         'PSAvoidUsingWriteHost'
     )
 }
