@@ -28,8 +28,6 @@ function Write-LogInfo {
             $mess = ($Message | Format-Table -HideTableHeaders -AutoSize | Out-String).Trim() -split "`r`n"
             Write-Host ($mess | ForEach-Object { "`n    $_" })
         }
-
-        Write-Host ''
     }
 }
 
@@ -306,6 +304,6 @@ function Resolve-IssueTitle {
     }
 }
 
-Export-ModuleMember -Function Write-LogInfo, Get-EnvironmentVariables, New-Array, Add-IntoArray, Initialize-NeededConfiguration, `
+Export-ModuleMember -Function Write-LogInfo, Get-EnvironmentVariable, New-Array, Add-IntoArray, Initialize-NeededConfiguration, `
     Expand-Property, Get-Manifest, New-DetailsCommentString, New-CheckListItem, Test-NestedBucket, Resolve-IssueTitle, `
     ConvertTo-CheckList

@@ -30,11 +30,7 @@ function Invoke-GithubRequest {
         'Uri'     = "$baseUrl/$Query"
     }
 
-    Write-LogInfo 'Github Request' $parameters
-
     if ($Body) { $parameters.Add('Body', (ConvertTo-Json $Body -Depth 8 -Compress)) }
-
-    Write-LogInfo 'Request Body' $parameters.Body
 
     $env:GH_REQUEST_COUNTER = ([int] $env:GH_REQUEST_COUNTER) + 1
 
@@ -199,7 +195,7 @@ function Remove-Label {
         foreach ($lab in $Label) {
             if ($issueLabels -contains $lab) {
                 # https://developer.github.com/v3/issues/labels/#list-labels-on-an-issue
-                Add-IntoArray $responses (Invoke-GithubRequest -Query "repos/$REPOSITORY/issues/$ID/labels/$label" -Method Delete)
+                Add-IntoArray $responses (Invoke-GithubRequest -Query "repos/$REPOSITORY/issues/$ID/labels/$lab" -Method Delete)
             }
         }
 
