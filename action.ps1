@@ -1,6 +1,5 @@
 # Set Global Preference
 $Global:ErrorActionPreference = 'Continue'
-$Global:VerbosePreference = 'SilentlyContinue'
 
 # Import all modules
 Join-Path $PSScriptRoot 'src' | Get-ChildItem -File | Select-Object -ExpandProperty Fullname | Import-Module
