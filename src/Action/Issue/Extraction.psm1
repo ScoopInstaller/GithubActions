@@ -75,6 +75,7 @@ function Show-ExtractionHelpDoc {
         [Parameter(Mandatory = $true)]
         [Int] $IssueID,
         [Parameter(Mandatory = $true)]
+        [AllowEmptyString()]
         [string] $IssueBody
     )
 
