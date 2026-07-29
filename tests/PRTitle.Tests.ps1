@@ -28,7 +28,7 @@ Describe 'PR Title Validation' -Tag 'PRTitle' {
             Test-PRTitle '7zip@24.08: update to latest' | Should -BeTrue
         }
 
-        It 'Should accept manifest with dots in name' {
+        It 'Should accept manifest with hyphens in name' {
             Test-PRTitle 'gcc-arm-none-eabi@13.2: update' | Should -BeTrue
         }
 
