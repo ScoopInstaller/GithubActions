@@ -29,6 +29,7 @@ jobs:
 app-name: Add version 1.0
 app-name@1.0: fix download url
 app-name(*): update multiple manifests
+app-name(-beta): update app-name and app-name-beta manifests
 (chore): update CI config
 ```
 
@@ -36,9 +37,12 @@ app-name(*): update multiple manifests
 
 - **New manifest:** `<manifest-name>: Add version <version>`
 - **Manifest update:** `<manifest-name>@<version>: <description>`
-- **Multi-manifest wildcard:** `<manifest-name>(*): <description>`
+- **Multi-manifest:** `<manifest-name>(*): <description>` or `<manifest-name>(<suffix>): <description>`
 - **Maintenance:** `(chore): <description>`
 - Manifest names must use **lowercase letters**, **numbers**, **hyphens**, and **dots** only
 - Manifest names must not start with a hyphen or dot
 - Manifest names must not end with a dot
+- Parenthesized portion content must use **lowercase letters**, **numbers**, **hyphens**, and **dots** only, and must contain at least one letter or number
+- Parenthesized portion content may start with a hyphen or dot, but must not end with a dot
+- The parenthesized portion is only appropriate when the PR's diff involves **multiple manifests** (not enforced by this action)
 - `(*)` wildcard and `@version` are mutually exclusive

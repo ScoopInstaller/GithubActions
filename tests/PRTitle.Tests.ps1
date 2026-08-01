@@ -40,8 +40,16 @@ Describe 'PR Title Validation' -Tag 'PRTitle' {
             Test-PRTitle 'notepad--@1.0: update' | Should -BeTrue
         }
 
-        It 'Should accept wildcard with pattern' {
-            Test-PRTitle 'app-name(beta*): update beta builds' | Should -BeTrue
+        It 'Should accept suffix portion starting with hyphen' {
+            Test-PRTitle 'app-name(-beta): update app-name and app-name-beta manifests' | Should -BeTrue
+        }
+
+        It 'Should accept suffix portion starting with dot' {
+            Test-PRTitle 'app-name(.bar): update' | Should -BeTrue
+        }
+
+        It 'Should accept suffix portion with trailing hyphen' {
+            Test-PRTitle 'app-name(-bar-): update' | Should -BeTrue
         }
 
         It 'Should accept version with pre-release tag' {
@@ -52,6 +60,30 @@ Describe 'PR Title Validation' -Tag 'PRTitle' {
     Context 'Invalid titles' {
         It 'Should reject uppercase manifest name' {
             Test-PRTitle 'App-Name: Add version 1.0' | Should -BeFalse
+        }
+
+        It 'Should reject suffix portion ending with dot' {
+            Test-PRTitle 'app-name(-foo.): update' | Should -BeFalse
+        }
+
+        It 'Should reject partial wildcard in suffix portion' {
+            Test-PRTitle 'app-name(beta*): update beta builds' | Should -BeFalse
+        }
+
+        It 'Should reject suffix portion of only hyphens or dots' {
+            Test-PRTitle 'app-name(-): update' | Should -BeFalse
+        }
+
+        It 'Should reject uppercase in suffix portion' {
+            Test-PRTitle 'app-name(Beta): update' | Should -BeFalse
+        }
+
+        It 'Should reject empty parenthesized portion' {
+            Test-PRTitle 'app-name(): update' | Should -BeFalse
+        }
+
+        It 'Should reject version with whitespace' {
+            Test-PRTitle 'app-name@1.0 beta: update' | Should -BeFalse
         }
 
         It 'Should reject leading hyphen' {

@@ -25,11 +25,13 @@ runs:
             Write-Host "::error::PR title does not follow Scoop naming convention."
             Write-Host ''
             Write-Host 'Expected: <manifest-name[@version]|(chore)>: <description>'
+            Write-Host '         or <manifest-name>(<suffix>): <description> for multiple manifests'
             Write-Host ''
             Write-Host 'Examples:'
             Write-Host '  app-name: Add version 1.0'
             Write-Host '  app-name@1.0: fix download url'
             Write-Host '  app-name(*): update multiple manifests'
+            Write-Host '  app-name(-beta): update app-name and app-name-beta manifests'
             Write-Host '  (chore): update CI config'
             Write-Host ''
             Write-Host "Got: `"$env:PR_TITLE`""

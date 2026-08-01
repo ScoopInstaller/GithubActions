@@ -13,6 +13,6 @@ function Test-PRTitle {
 
     if ([string]::IsNullOrEmpty($Title)) { return $false }
 
-    $re = '^(\(chore\)|[a-z0-9]([a-z0-9.-]*[a-z0-9-])?(\([^)]*\)|@[^:(]+)?): .+'
+    $re = '^(\(chore\)|[a-z0-9]([a-z0-9.-]*[a-z0-9-])?(\(\*\)|\((?=[a-z0-9.-]*[a-z0-9])[a-z0-9.-]*[a-z0-9-]\)|@[^\s:(]+)?): .+'
     return $Title -cmatch $re
 }
