@@ -1,0 +1,41 @@
+name: Lint PR Title
+description: Validate that PR titles follow the Scoop naming convention.
+author: ScoopInstaller Maintainers
+branding:
+  icon: check-circle
+  color: green
+
+runs:
+  using: composite
+  steps:
+    - name: Validate PR title
+      shell: pwsh
+      env:
+        EVENT_NAME: ${{ github.event_name }}
+        PR_TITLE: ${{ github.event.pull_request.title }}
+      run: |
+        . "${{ github.action_path }}/PRTitle.ps1"
+
+        if ($env:EVENT_NAME -ne 'pull_request') {
+            Write-Host 'This action only works on pull_request events, skipping.'
+            exit 0
+        }
+
+        if (-not (Test-PRTitle $env:PR_TITLE)) {
+            Write-Host "::error::PR title does not follow Scoop naming convention."
+            Write-Host ''
+            Write-Host 'Expected: <manifest-name[@version]|(chore)>: <description>'
+            Write-Host '         or <manifest-name>(<suffix>): <description> for multiple manifests'
+            Write-Host ''
+            Write-Host 'Examples:'
+            Write-Host '  app-name: Add version 1.0'
+            Write-Host '  app-name@1.0: fix download url'
+            Write-Host '  app-name(*): update multiple manifests'
+            Write-Host '  app-name(-beta): update app-name and app-name-beta manifests'
+            Write-Host '  (chore): update CI config'
+            Write-Host ''
+            Write-Host "Got: `"$env:PR_TITLE`""
+            exit 1
+        }
+
+        Write-Host "PR title is valid: `"$env:PR_TITLE`""
