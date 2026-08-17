@@ -1,3 +1,7 @@
+# Set Global Preference
+# FIXME(chawyehsu): see https://github.com/ScoopInstaller/GithubActions/pull/86#discussion_r3795404713
+$Global:ErrorActionPreference = 'Continue'
+
 # Import all modules
 Join-Path $PSScriptRoot 'src' | Get-ChildItem -File | Select-Object -ExpandProperty Fullname | Import-Module
 
