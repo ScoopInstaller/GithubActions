@@ -6,9 +6,7 @@ function Install-Scoop {
         Install scoop using new installer.
     #>
     Write-LogInfo 'Installing scoop'
-    $f = Join-Path $env:USERPROFILE 'install.ps1'
-    Invoke-WebRequest 'https://raw.githubusercontent.com/ScoopInstaller/Install/master/install.ps1' -UseBasicParsing -OutFile $f
-    & $f -RunAsAdmin
+    Invoke-RestMethod 'https://raw.githubusercontent.com/ScoopInstaller/Install/master/install.ps1' | Invoke-Expression
     if ($env:SCOOP_REPO) {
         Write-LogInfo "Switching to repository: ${env:SCOOP_REPO}"
         scoop config scoop_repo $env:SCOOP_REPO

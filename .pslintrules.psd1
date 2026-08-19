@@ -26,6 +26,8 @@
         # https://github.com/PowerShell/PSScriptAnalyzer/issues/636
         'PSUseDeclaredVarsMoreThanAssignments',
         # `Write-LogInfo` uses `Write-Host` currently.
-        'PSAvoidUsingWriteHost'
+        'PSAvoidUsingWriteHost',
+        # Invoke-Expression is used to run the scoop installer script.
+        'PSAvoidUsingInvokeExpression'
     )
 }
