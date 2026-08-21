@@ -15,8 +15,6 @@ function Resolve-PullRequestAction {
             Write-LogInfo 'Opened PR'
         }
         'created' {
-            Write-LogInfo 'Commented PR'
-
             if ($GITHUB_EVENT.comment.body -like '/verify*') {
                 Write-LogInfo 'Verify comment'
 
@@ -166,7 +164,7 @@ function Test-PRFile {
         }
 
         #region Lint
-        Write-LogInfo 'Lint'
+        Write-Verbose 'Lint'
 
         try {
             & (Join-Path $BINARIES_FOLDER 'formatjson.ps1') -App $manifest.Basename -Dir $MANIFESTS_LOCATION
@@ -182,7 +180,7 @@ function Test-PRFile {
 
         $statuses.Add('Lint', $lint)
 
-        Write-LogInfo 'Lint done'
+        Write-Verbose 'Lint done'
         #endregion
 
         #region 1. Property checks
@@ -193,7 +191,7 @@ function Test-PRFile {
 
         #region 2. Hashes
         if ($object.version -ne 'nightly') {
-            Write-LogInfo 'Hashes'
+            Write-Verbose 'Hashes'
 
             try {
                 $outputH = @(& (Join-Path $BINARIES_FOLDER 'checkhashes.ps1') -App $manifest.Basename -Dir $MANIFESTS_LOCATION *>&1)
@@ -201,31 +199,31 @@ function Test-PRFile {
                 $outputH = @("Exception occurred: $($_.Exception.Message)", "$($_.ScriptStackTrace)")
             }
 
-            Write-LogInfo 'Output' $outputH
+            Write-Verbose ($outputH -join '`r`n')
 
             # Everything should be all right when latest string in array will be OK
             $statuses.Add('Hashes', ($outputH[-1] -like 'OK'))
 
-            Write-LogInfo 'Hashes done'
+            Write-Verbose 'Hashes done'
         }
         #endregion 2. Hashes
 
         #region 3. Checkver and 4. Autoupdate
         if ($object.checkver) {
-            Write-LogInfo 'Checkver'
+            Write-Verbose 'Checkver'
             $outputV = @(& (Join-Path $BINARIES_FOLDER 'checkver.ps1') -App $manifest.Basename -Dir $MANIFESTS_LOCATION -Force *>&1)
-            Write-LogInfo 'Output' $outputV
+            Write-Verbose ($outputV -join '`r`n')
 
             $joinedOutputV = $outputV -join ' '
             # Try to match "<manifest-name>: <version>" from outputV
             $checkverRegex = "$([regex]::escape($manifest.Basename)):\s*$([regex]::escape($($object.version)))"
             $checkver = $joinedOutputV -match $checkverRegex
             $statuses.Add('Checkver', $checkver)
-            Write-LogInfo 'Checkver done'
+            Write-Verbose 'Checkver done'
 
             #region Autoupdate
             if ($object.autoupdate) {
-                Write-LogInfo 'Autoupdate'
+                Write-Verbose 'Autoupdate'
                 $autoupdate = $false
                 switch -Wildcard ($outputV[-1]) {
                     'ERROR*' {
@@ -252,7 +250,7 @@ function Test-PRFile {
                     }
                     $statuses.Add('Autoupdate Hash Extraction', $result)
                 }
-                Write-LogInfo 'Autoupdate done'
+                Write-Verbose 'Autoupdate done'
             }
             #endregion Autoupdate
         }
@@ -315,20 +313,18 @@ function Initialize-PR {
     #region Stage 1 - Repository initialization
     $commented = Resolve-PullRequestAction
     if ($null -eq $commented) { return } # Exit on not supported state
-    Write-LogInfo 'Commented?' $commented
+    Write-Verbose "Commented? $commented"
 
-    $GITHUB_EVENT | ConvertTo-Json -Depth 8 -Compress | Write-LogInfo 'Pure PR Event'
     if ($GITHUB_EVENT_new) {
-        Write-LogInfo 'There is new event available'
+        Write-Verbose 'There is new event available'
         $GITHUB_EVENT = $GITHUB_EVENT_new
-        $GITHUB_EVENT | ConvertTo-Json -Depth 8 -Compress | Write-LogInfo 'New Event'
     }
 
     # TODO: Ternary
     $head = if ($commented) { $GITHUB_EVENT.head } else { $GITHUB_EVENT.pull_request.head }
 
     if ($head.repo.fork) {
-        Write-LogInfo 'Forked repository'
+        Write-Verbose 'Forked repository'
 
         if ($GITHUB_EVENT_TYPE -ne 'pull_request_target') {
             # There is no need to run whole action under forked repository due to permission problem
@@ -343,7 +339,7 @@ function Initialize-PR {
         Write-LogInfo 'Repo' $REPOSITORY_forked
 
         $cloneLocation = "${env:TMP}\forked_repository"
-        git clone --branch $head.ref $head.repo.clone_url $cloneLocation
+        git clone -q --branch $head.ref $head.repo.clone_url $cloneLocation
         $script:BUCKET_ROOT = $cloneLocation
         $buck = Join-Path $BUCKET_ROOT 'bucket'
         # TODO: Ternary
@@ -357,11 +353,6 @@ function Initialize-PR {
     Set-RepositoryContext $head.ref
     #endregion Stage 1 - Repository initialization
 
-    # In case of forked repository it needs to be '/github/forked_workspace'
-    Get-Location | Write-LogInfo 'Context of action'
-    (Get-ChildItem $BUCKET_ROOT | Select-Object -ExpandProperty Basename) -join ', ' | Write-LogInfo 'Root Files'
-    (Get-ChildItem $MANIFESTS_LOCATION -Filter '*.json' -Recurse | Select-Object -ExpandProperty Basename) -join ', ' | Write-LogInfo 'Manifests'
-
     # Do not run checks on removed files
     $files = Get-AllChangedFilesInPR $GITHUB_EVENT.number -Filter
     Write-LogInfo 'PR Changed Files' $files
@@ -373,7 +364,9 @@ function Initialize-PR {
 
     #region Stage 3 - Final Message
     Write-LogInfo 'Checked manifests' $check.name
-    Write-LogInfo 'Invalids' $invalid
+    if ($invalid.Count -gt 0) {
+        Write-LogInfo 'Invalid manifests' $invalid
+    }
 
     if (($check.Count -eq 0) -and ($invalid.Count -eq 0)) {
         Write-LogInfo 'No compatible files in PR'

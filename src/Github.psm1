@@ -61,7 +61,7 @@ function Add-Comment {
         $Message += "`r`n[_Check the full log for details._]($(Get-LogURL -UseCache:$true))"
     }
 
-    return Invoke-GithubRequest -Query "repos/$REPOSITORY/issues/$ID/comments" -Method Post -Body @{ 'body' = ($Message -join "`r`n") }
+    $resp = Invoke-GithubRequest -Query "repos/$REPOSITORY/issues/$ID/comments" -Method Post -Body @{ 'body' = ($Message -join "`r`n") }
 }
 
 function Get-AllChangedFilesInPR {
@@ -131,7 +131,7 @@ function New-Issue {
         }
         if ($Milestone) { $params.Add('milestone', $Milestone) }
 
-        return Invoke-GithubRequest "repos/$REPOSITORY/issues" -Method 'Post' -Body $params
+        $resp = Invoke-GithubRequest "repos/$REPOSITORY/issues" -Method 'Post' -Body $params
     }
 }
 
@@ -145,7 +145,7 @@ function Close-Issue {
     #>
     param([Parameter(Mandatory)][Int] $ID)
 
-    return Invoke-GithubRequest -Query "repos/$REPOSITORY/issues/$ID" -Method Patch -Body @{ 'state' = 'closed' }
+    $resp = Invoke-GithubRequest -Query "repos/$REPOSITORY/issues/$ID" -Method Patch -Body @{ 'state' = 'closed' }
 }
 
 function Add-Label {
@@ -166,7 +166,7 @@ function Add-Label {
         [String[]] $Label
     )
 
-    return Invoke-GithubRequest -Query "repos/$REPOSITORY/issues/$ID/labels" -Method Post -Body @{ 'labels' = $Label }
+    $resp = Invoke-GithubRequest -Query "repos/$REPOSITORY/issues/$ID/labels" -Method Post -Body @{ 'labels' = $Label }
 }
 
 function Remove-Label {
@@ -310,7 +310,7 @@ function Get-LogURL {
         $logURL += "/job/$job_id"
     }
 
-    Write-LogInfo 'Log URL' $logURL
+    Write-Verbose "Log URL: $logURL"
 
     return $logURL
 }
