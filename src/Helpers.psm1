@@ -258,9 +258,7 @@ function Test-NestedBucket {
         Open new issue and exit with non zero exit code otherwise.
     #>
 
-    if (Test-Path $MANIFESTS_LOCATION) {
-        Write-LogInfo 'Bucket contains nested bucket folder'
-    } else {
+    if (-not (Test-Path $MANIFESTS_LOCATION -PathType Container)) {
         Write-LogInfo 'Buckets without nested bucket folder are not supported.'
 
         $adopt = 'Adopt nested bucket structure'

@@ -29,7 +29,7 @@ function Test-Hash {
         $outputH = @("Exception occurred: $($_.Exception.Message)", "$($_.ScriptStackTrace)")
     }
 
-    Write-LogInfo 'Output' $outputH
+    Write-Verbose ($outputH -join '`r`n')
 
     if (($outputH[-2] -like 'OK') -and ($outputH[-1] -like 'Writing*')) {
         Write-LogInfo 'Cannot reproduce.'
@@ -97,7 +97,7 @@ function Test-Hash {
 
             Write-LogInfo 'PR ID' $prID
             # Update PR description
-            Invoke-GithubRequest "repos/$REPOSITORY/pulls/$prID" -Method Patch -Body @{ 'body' = (@("- Closes #$IssueID", $pr.body) -join "`r`n") }
+            $resp = Invoke-GithubRequest "repos/$REPOSITORY/pulls/$prID" -Method Patch -Body @{ 'body' = (@("- Closes #$IssueID", $pr.body) -join "`r`n") }
             Add-Label -ID $IssueID -Label 'duplicate'
         } else {
             Write-LogInfo 'Git Status:'
@@ -136,7 +136,7 @@ function Test-Hash {
                     Write-LogInfo 'Creating PR'
 
                     # Create new PR
-                    Invoke-GithubRequest -Query "repos/$REPOSITORY/pulls" -Method Post -Body @{
+                    $resp = Invoke-GithubRequest -Query "repos/$REPOSITORY/pulls" -Method Post -Body @{
                         'title' = $titleToBePosted
                         'base'  = $masterBranch
                         'head'  = $branch
