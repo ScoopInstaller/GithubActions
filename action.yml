@@ -1,12 +1,19 @@
 name: Bucket Minion
 description: Set of actions to automate Scoop bucket maintenance.
 author: ScoopInstaller Maintainers
+branding:
+  icon: package
+  color: purple
+
+inputs:
+  github_token:
+    description: "GitHub token for GitHub-related requests. Defaults to github.token."
+    required: false
+
 runs:
   using: composite
   steps:
     - run: ${{ github.action_path }}/action.ps1
       shell: pwsh
-
-branding:
-  icon: package
-  color: purple
+      env:
+        GITHUB_TOKEN: ${{ env.GITHUB_TOKEN || inputs.github_token || github.token }}
