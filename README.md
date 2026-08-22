@@ -123,26 +123,10 @@ is executed when a new pull request is created or a comment starting with
 # .github/workflows/pull_request.yml
 name: Pull Requests
 on:
+  # Triggered when a pull request is opened
+  # or a `/verify` comment is posted to an existing pull request
   pull_request:
     types: [opened]
-permissions:
-  contents: read
-  pull-requests: write
-jobs:
-  pullRequestHandler:
-    name: PullRequestHandler
-    runs-on: windows-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-      - name: PullRequestHandler
-        uses: ScoopInstaller/GithubActions@main
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-# .github/workflows/issue_commented.yml
-name: Commented Pull Request
-on:
   issue_comment:
     types: [created]
 permissions:
@@ -151,13 +135,13 @@ permissions:
 jobs:
   pullRequestHandler:
     name: PullRequestHandler
+    if: github.event_name == 'pull_request' || (github.event.issue.pull_request && startsWith(github.event.comment.body, '/verify'))
     runs-on: windows-latest
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: PullRequestHandler
         uses: ScoopInstaller/GithubActions@main
-        if: startsWith(github.event.comment.body, '/verify')
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
