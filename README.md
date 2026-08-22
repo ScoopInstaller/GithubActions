@@ -41,7 +41,6 @@ jobs:
       - name: Excavate
         uses: ScoopInstaller/GithubActions@main
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SKIP_UPDATED: 1
 ```
 
@@ -63,15 +62,13 @@ permissions:
 jobs:
   issueHandler:
     name: IssueHandler
+    if: github.event.action == 'opened' || (github.event.action == 'labeled' && contains(github.event.issue.labels.*.name, 'verify'))
     runs-on: windows-latest
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: IssueHandler
         uses: ScoopInstaller/GithubActions@main
-        if: github.event.action == 'opened' || (github.event.action == 'labeled' && contains(github.event.issue.labels.*.name, 'verify'))
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
 
 Based on the issue title, a specific sub-action is executed. It could be one of:
@@ -142,8 +139,6 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: PullRequestHandler
         uses: ScoopInstaller/GithubActions@main
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
 
 Multiple validators are executed for each pull request:
@@ -166,8 +161,8 @@ Following environment variables are available for the main action.
 ```yaml
 - uses: ScoopInstaller/GithubActions@main
   env:
-    # `GITHUB_TOKEN`: **REQUIRED**
-    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    # `GITHUB_TOKEN`: Optional, `${{ github.token }}` if not specified
+    GITHUB_TOKEN: ${{ github.token }}
     # `USER_EMAIL`: Optional
     # `41898282+github-actions[bot]@users.noreply.github.com` if not specified
     USER_EMAIL: ''

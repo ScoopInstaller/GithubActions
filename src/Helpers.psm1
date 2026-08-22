@@ -103,7 +103,7 @@ function Initialize-NeededConfiguration {
 
     @('cache', 'buckets', 'modules', 'persist', 'shims', 'workspace') | ForEach-Object { New-Item (Join-Path $env:SCOOP $_) -Force -ItemType Directory | Out-Null }
 
-    $user = if ($env:USER_NAME) { $env:USER_NAME } else { 'github-actions[bot]' }
+    $user = if ($env:USER_NAME) { $env:USER_NAME } else { $DEFAULT_USERNAME }
     $email = if ($env:USER_EMAIL) { $env:USER_EMAIL } else { $DEFAULT_EMAIL }
     $rem = "https://${env:GITHUB_ACTOR}:$env:GITHUB_TOKEN@github.com/$env:GITHUB_REPOSITORY.git"
 
