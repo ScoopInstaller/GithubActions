@@ -1,5 +1,4 @@
 Join-Path $PSScriptRoot '..\Helpers.psm1' | Import-Module
-Join-Path $PSScriptRoot 'Issue' | Get-ChildItem -Filter '*.psm1' | Select-Object -ExpandProperty Fullname | Import-Module
 
 function Invoke-Git {
     param(
@@ -201,6 +200,103 @@ function Test-Downloading {
             ) + $broken_urls)
         Add-Label -ID $IssueID -Label 'manifest-fix-needed', 'verified', 'help wanted'
     }
+}
+
+function Show-ExtractionHelpDoc {
+    param (
+        [Parameter(Mandatory = $true)]
+        [Int] $IssueID,
+        [Parameter(Mandatory = $true)]
+        [AllowEmptyString()]
+        [string] $IssueBody
+    )
+
+    # Tips from Scoop common known issues:
+    # https://github.com/ScoopInstaller/Scoop/issues/6378
+    $tips = [Ordered] @{
+        '7zip'    = @(
+            '- 7zip package decompression/extraction error',
+            'Make sure you have the latest version of `7zip` installed:',
+            '  ```',
+            '  scoop update 7zip',
+            '  ```',
+            '  If you have enabled `use_external_7zip`, update it using the appropriate method for your setup.'
+        )
+        'msi'     = @(
+            '- MSI package decompression/extraction error',
+            '  - If you are using default MSI extractor (msiexec):',
+            '  This is usually caused by a msiexec process exception, try one of them:',
+            '    - Switch to alternative MSI extractor then retry: `scoop config use_lessmsi true` (Default: false).',
+            '    - Resolve the msiexec exception/occupation then retry, if you know about it.',
+            '    - Restart the PC then retry.',
+            '',
+            '    Learn more: https://learn.microsoft.com/en-us/windows/win32/msi/error-codes',
+            '  - If you are using alternative MSI extractor (lessmsi):',
+            '    - Switch to default MSI extractor then retry: `scoop config use_lessmsi false` (Default: false).'
+        )
+        'innounp' = @(
+            '- Inno Setup package decompression/extraction error',
+            'Make sure you have the latest version of `innounp` or `innounp-unicode` installed:',
+            '  ```',
+            '  scoop update innounp -f',
+            '  ```',
+            '  ```',
+            '  scoop update innounp-unicode -f',
+            '  ```',
+            '> [!NOTE]',
+            '> Innounp was previously incorrectly updated to version [2025](https://github.com/ScoopInstaller/Main/commit/64a7d914ab). Since this version number is higher than the actual latest version, it prevents automatic updates. If you are on this version, please run `scoop update innounp -f`.',
+            '',
+            '> [!IMPORTANT]',
+            '> **Sometimes, the latest version of innounp may not support unpacking the latest Inno Setup packages.**',
+            '> **You might need to wait for an upstream update of innounp.**',
+            '> See: https://github.com/jrathlev/InnoUnpacker-Windows-GUI?tab=readme-ov-file#inspect-and-unpack-innosetup-archives'
+        )
+        'dark'    = @(
+            '- WiX package decompression/extraction error',
+            'Make sure you have the latest version of `dark` installed:',
+            '  ```',
+            '  scoop update dark',
+            '  ```'
+        )
+    }
+
+    $tipHead = @(
+        'Decompression/extraction errors can be caused by various reasons. Here are some common solutions you can try:'
+    )
+
+    $tipTail = @(
+        'If none of the above solutions work, it may be caused by other reasons like:',
+        '- Extraction blocked by antivirus.',
+        '- Extraction failed due to insufficient disk space.',
+        '- Extraction method outdated due to changes in upstream package type or structure. May need a manual fix for manifest.',
+        '- ...',
+        '',
+        'If the problem persists, please keep this issue open and paste the log content from the failed installation, if available.',
+        'This will help us diagnose and resolve the issue more effectively.',
+        '> [!WARNING]',
+        '> If you are using an unofficial Scoop-Core with an official bucket,',
+        '> the decompress error may be caused by significant differences between the official and unofficial cores.',
+        '> In this case, please try switching to the official [Scoop-Core](https://github.com/ScoopInstaller/Scoop) instead.'
+    )
+
+    $tipContent = @()
+
+    switch -Regex ($IssueBody) {
+        '7zip' { $tipContent += $tips['7zip']; $tipContent += '' }
+        'msi' { $tipContent += $tips['msi']; $tipContent += '' }
+        'innounp' { $tipContent += $tips['innounp']; $tipContent += '' }
+        'dark' { $tipContent += $tips['dark']; $tipContent += '' }
+        default {
+            $tips.Values | ForEach-Object {
+                $tipContent += $_
+                $tipContent += ''
+            }
+        }
+    }
+
+    $message = $tipHead + $tipContent + $tipTail
+
+    Add-Comment -ID $IssueID -Message $message
 }
 
 function Initialize-Issue {
