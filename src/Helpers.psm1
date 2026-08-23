@@ -21,7 +21,7 @@ function Write-LogInfo {
             Write-Host "INFO: $Summary"
         } elseif (($Message.Count -eq 1) -and ($Message[0] -isnot [Hashtable])) {
             # Simple non hashtable object and summary should be one liner
-            Write-Host "${Summary}: $Message"
+            Write-Host "${Summary}: $($Message)"
         } else {
             # Detailed output using format table
             Write-Host "Log of ${Summary}:"

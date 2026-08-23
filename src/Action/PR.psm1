@@ -336,7 +336,6 @@ function Initialize-PR {
         }
 
         $REPOSITORY_forked = "$($head.repo.full_name):$($head.ref)"
-        Write-LogInfo 'Repo' $REPOSITORY_forked
 
         $cloneLocation = "${env:TMP}\forked_repository"
         git clone -q --branch $head.ref $head.repo.clone_url $cloneLocation
@@ -354,13 +353,12 @@ function Initialize-PR {
     #endregion Stage 1 - Repository initialization
 
     # Do not run checks on removed files
-    $files = Get-AllChangedFilesInPR $GITHUB_EVENT.number -Filter
-    Write-LogInfo 'PR Changed Files' $files
-    $files = $files | Where-Object -Property 'filename' -Like -Value 'bucket/*'
-    Write-LogInfo 'Only Changed Manifests' $files
+    $changedFiles = Get-AllChangedFilesInPR $GITHUB_EVENT.number -Filter
+    $changedManifests = $changedFiles | Where-Object -Property 'filename' -Like -Value 'bucket/*.json'
+    Write-LogInfo 'Changed Manifests' $changedManifests
 
     # Stage 2 - Manifests validation
-    $check, $invalid = Test-PRFile $files
+    $check, $invalid = Test-PRFile $changedManifests
 
     #region Stage 3 - Final Message
     Write-LogInfo 'Checked manifests' $check.name
