@@ -5,8 +5,22 @@ function Install-Scoop {
     .SYNOPSIS
         Install scoop using new installer.
     #>
-    Write-LogInfo 'Installing scoop'
-    Invoke-RestMethod 'https://raw.githubusercontent.com/ScoopInstaller/Install/master/install.ps1' | Invoke-Expression
+
+    $shimsPath = Join-Path $env:SCOOP 'shims'
+    $scoopShim = Join-Path $shimsPath 'scoop.ps1'
+    $isScoopAccessible = [bool](Get-Command -Name 'scoop' `
+            -CommandType Application -ErrorAction SilentlyContinue)
+
+    if (-not $isScoopAccessible) {
+        if (Test-Path $scoopShim) {
+            Write-LogInfo 'Restoring existing scoop installation'
+            $env:PATH = "$shimsPath;$env:PATH"
+        } else {
+            Write-LogInfo 'Installing scoop'
+            Invoke-RestMethod 'https://raw.githubusercontent.com/ScoopInstaller/Install/master/install.ps1' | Invoke-Expression
+        }
+    }
+
     if ($env:SCOOP_REPO) {
         Write-LogInfo "Switching to repository '${env:SCOOP_REPO}'"
         scoop config scoop_repo $env:SCOOP_REPO
