@@ -19,6 +19,6 @@ Get-ChildItem (Join-Path $env:SCOOP_HOME 'lib') '*.ps1' | ForEach-Object { . $_.
 
 Invoke-Action
 
-Write-LogInfo 'Number of Github Requests' $env:GH_REQUEST_COUNTER
+Write-LogInfo "${env:GH_REQUEST_COUNTER} GitHub requests used"
 
 if ($env:NON_ZERO_EXIT) { exit $NON_ZERO }
