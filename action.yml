@@ -1,4 +1,4 @@
-name: Bucket Minion
+name: ScoopInstaller Bucket Actions
 description: Set of actions to automate Scoop bucket maintenance.
 author: ScoopInstaller Maintainers
 branding:
