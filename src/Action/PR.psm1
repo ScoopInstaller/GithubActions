@@ -84,6 +84,7 @@ function Send-FinalMessage {
         Add-IntoArray $message ''
         ConvertTo-CheckList $ch.Statuses | ForEach-Object { Add-IntoArray $message $_ }
         Add-IntoArray $message ''
+        Write-LogInfo -Summary "Check Results for $($ch.Name)" -Message $ch.Statuses
     }
 
     if ($Invalid.Count -gt 0) {
@@ -199,7 +200,7 @@ function Test-PRFile {
                 $outputH = @("Exception occurred: $($_.Exception.Message)", "$($_.ScriptStackTrace)")
             }
 
-            Write-Verbose ($outputH -join '`r`n')
+            Write-LogInfo -Summary 'checkhashes.ps1 Script Output' -Message $outputH
 
             # Everything should be all right when latest string in array will be OK
             $statuses.Add('Hashes', ($outputH[-1] -like 'OK'))
@@ -212,7 +213,7 @@ function Test-PRFile {
         if ($object.checkver) {
             Write-Verbose 'Checkver'
             $outputV = @(& (Join-Path $BINARIES_FOLDER 'checkver.ps1') -App $manifest.Basename -Dir $MANIFESTS_LOCATION -Force *>&1)
-            Write-Verbose ($outputV -join '`r`n')
+            Write-LogInfo -Summary 'checkver.ps1 Script Output' -Message $outputV
 
             $joinedOutputV = $outputV -join ' '
             # Try to match "<manifest-name>: <version>" from outputV
@@ -361,7 +362,10 @@ function Initialize-PR {
     $check, $invalid = Test-PRFile $changedManifests
 
     #region Stage 3 - Final Message
-    Write-LogInfo 'Checked manifests' $check.name
+    if ($check.Count -gt 0) {
+        Write-LogInfo 'Checked manifests' $check.name
+    }
+
     if ($invalid.Count -gt 0) {
         Write-LogInfo 'Invalid manifests' $invalid
     }

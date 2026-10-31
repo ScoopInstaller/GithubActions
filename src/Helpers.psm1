@@ -19,14 +19,14 @@ function Write-LogInfo {
         # If it is only summary it is informative log
         if ($Summary -and ($null -eq $Message)) {
             Write-Host "INFO: $Summary"
-        } elseif (($Message.Count -eq 1) -and ($Message[0] -isnot [Hashtable])) {
+        } elseif (($Message.Count -eq 1) -and ($Message[0] -isnot [System.Collections.IDictionary])) {
             # Simple non hashtable object and summary should be one liner
             Write-Host "${Summary}: $($Message)"
         } else {
             # Detailed output using format table
             Write-Host "Log of ${Summary}:"
             $mess = ($Message | Format-Table -HideTableHeaders -AutoSize | Out-String).Trim() -split "`r`n"
-            Write-Host ($mess | ForEach-Object { "`n    $_" })
+            Write-Host (($mess | ForEach-Object { "    $_" }) -join "`n")
         }
     }
 }
@@ -242,7 +242,6 @@ function ConvertTo-CheckList {
     }
 
     $result | ForEach-Object {
-        Write-LogInfo $_.Item $_.State
         if ($_.State -eq $false) { $env:NON_ZERO_EXIT = $true }
         $final += New-CheckListItem -Item $_.Item -IndentLevel $_.Indent -OK:$_.State
     }

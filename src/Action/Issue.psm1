@@ -28,7 +28,7 @@ function Test-Hash {
         $outputH = @("Exception occurred: $($_.Exception.Message)", "$($_.ScriptStackTrace)")
     }
 
-    Write-Verbose ($outputH -join '`r`n')
+    Write-LogInfo -Summary 'checkhashes.ps1 Script Output' -Message $outputH
 
     if (($outputH[-2] -like 'OK') -and ($outputH[-1] -like 'Writing*')) {
         Write-LogInfo 'Cannot reproduce.'
@@ -171,6 +171,8 @@ function Test-Downloading {
 
     $outputH = @(& (Join-Path $BINARIES_FOLDER 'checkurls.ps1') -App $gci.BaseName -Dir $MANIFESTS_LOCATION *>&1)
     $broken_urls = $outputH -match '>' -replace '.*?>', '-'
+
+    Write-LogInfo -Summary 'checkurls.ps1 Script Output' -Message $outputH
 
     if (!$broken_urls) {
         Write-LogInfo 'Cannot reproduce'
